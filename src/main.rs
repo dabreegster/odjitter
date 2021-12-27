@@ -12,13 +12,18 @@ fn main() -> Result<()> {
     let all_subpoints = odjitter::scrape_points("data/road_network.geojson")?;
     println!("Scraped {} subpoints", all_subpoints.len());
 
-    let max_per_od = 10;
+    let options = odjitter::Options {
+        max_per_od: 10,
+        subsample: odjitter::Subsample::UnweightedPoints(all_subpoints),
+        all_key: "all".to_string(),
+        origin_key: "geo_code1".to_string(),
+        destination_key: "geo_code2".to_string(),
+    };
     let gj = odjitter::jitter(
-        &zones,
         "data/od.csv",
-        max_per_od,
+        &zones,
         &mut StdRng::seed_from_u64(42),
-        Some(all_subpoints),
+        options,
     )?;
 
     let mut file = File::create("output.geojson")?;

@@ -14,24 +14,58 @@ use rand::Rng;
 // TODO Grab subpoints from OSM road network
 // TODO Grab subpoints from OSM buildings, weighted
 
+pub struct Options {
+    /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
+    /// contains less than this, it will appear in the output without transformation. Otherwise,
+    /// the input row is repeated until the sum matches the original value, but each output row
+    /// obeys this maximum.
+    pub max_per_od: usize,
+    pub subsample: Subsample,
+    /// Which column in the OD row specifies the total number of trips to disaggregate?
+    pub all_key: String,
+    /// Which column in the OD row specifies the zone where trips originate?
+    pub origin_key: String,
+    /// Which column in the OD row specifies the zone where trips ends?
+    pub destination_key: String,
+}
+
+/// Specifies how specific points should be generated within a zone.
+pub enum Subsample {
+    /// Pick points uniformly at random within the zone's shape.
+    ///
+    /// Note that "within" excludes points directly on the zone's boundary.
+    RandomPoints,
+    /// Sample uniformly at random from these points within the zone's shape.
+    ///
+    /// Note that "within" excludes points directly on the zone's boundary. If a point lies in more
+    /// than one zone, it'll be assigned to any of those zones arbitrarily. (This means the input
+    /// zones overlap.)
+    UnweightedPoints(Vec<Point<f64>>),
+}
+
 pub fn jitter(
-    zones: &HashMap<String, MultiPolygon<f64>>,
     csv_path: &str,
-    max_per_od: usize,
+    zones: &HashMap<String, MultiPolygon<f64>>,
     rng: &mut StdRng,
-    subpoints: Option<Vec<Point<f64>>>,
+    options: Options,
 ) -> Result<GeoJson> {
     let mut output = Vec::new();
 
-    let points_in_zones = subpoints.map(|points| points_to_zones(points, zones));
+    let points_per_zone: Option<HashMap<String, Vec<Point<f64>>>> =
+        if let Subsample::UnweightedPoints(points) = options.subsample {
+            Some(points_per_zone(points, zones))
+        } else {
+            None
+        };
 
     for rec in csv::Reader::from_reader(File::open(csv_path)?).deserialize() {
         let mut key_value: HashMap<String, String> = rec?;
-        let origin_id = key_value["geo_code1"].clone();
-        let destination_id = key_value["geo_code2"].clone();
+        let origin_id = key_value[&options.origin_key].clone();
+        let destination_id = key_value[&options.destination_key].clone();
 
         // How many times will we jitter this one row?
-        let repeat = (key_value["all"].parse::<f64>()? / (max_per_od as f64)).ceil();
+        let repeat =
+            (key_value[&options.all_key].parse::<f64>()? / (options.max_per_od as f64)).ceil();
 
         // Scale all of the numeric values
         for value in key_value.values_mut() {
@@ -40,7 +74,7 @@ pub fn jitter(
             }
         }
 
-        if let Some(ref points) = points_in_zones {
+        if let Some(ref points) = points_per_zone {
             let points_in_o = &points[&origin_id];
             let points_in_d = &points[&destination_id];
             for _ in 0..repeat as usize {
@@ -120,7 +154,7 @@ fn random_pt(rng: &mut StdRng, poly: &MultiPolygon<f64>) -> Point<f64> {
     }
 }
 
-fn points_to_zones(
+fn points_per_zone(
     points: Vec<Point<f64>>,
     zones: &HashMap<String, MultiPolygon<f64>>,
 ) -> HashMap<String, Vec<Point<f64>>> {
