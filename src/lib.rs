@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs::File;
+use std::path::Path;
 
 use anyhow::Result;
 use geo::algorithm::bounding_rect::BoundingRect;
@@ -9,6 +9,7 @@ use geojson::GeoJson;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 use rand::Rng;
+use serde_json::{Map, Value};
 
 // TODO Weighted subpoints
 // TODO Grab subpoints from OSM road network
@@ -43,8 +44,8 @@ pub enum Subsample {
     UnweightedPoints(Vec<Point<f64>>),
 }
 
-pub fn jitter(
-    csv_path: &str,
+pub fn jitter<P: AsRef<Path>>(
+    csv_path: P,
     zones: &HashMap<String, MultiPolygon<f64>>,
     rng: &mut StdRng,
     options: Options,
@@ -58,25 +59,33 @@ pub fn jitter(
             None
         };
 
-    for rec in csv::Reader::from_reader(File::open(csv_path)?).deserialize() {
-        let mut key_value: HashMap<String, String> = rec?;
-        let origin_id = key_value[&options.origin_key].clone();
-        let destination_id = key_value[&options.destination_key].clone();
+    for rec in csv::Reader::from_path(csv_path)?.deserialize() {
+        // Transform from CSV directly into a JSON map, auto-detecting strings and numbers.
+        // TODO Even if origin_key or destination_key looks like a number, force it into a string
+        let mut key_value: Map<String, Value> = rec?;
 
         // How many times will we jitter this one row?
         let repeat =
-            (key_value[&options.all_key].parse::<f64>()? / (options.max_per_od as f64)).ceil();
+            (key_value[&options.all_key].as_f64().unwrap() / (options.max_per_od as f64)).ceil();
 
         // Scale all of the numeric values
-        for value in key_value.values_mut() {
-            if let Ok(x) = value.parse::<f64>() {
-                *value = (x / repeat).to_string();
+        for (key, value) in &mut key_value {
+            // ... but never the zone names, even if they look numeric!
+            if key == &options.origin_key || key == &options.destination_key {
+                continue;
+            }
+            if let Some(x) = value.as_f64() {
+                // Crashes on NaNs, infinity
+                *value = Value::Number(serde_json::Number::from_f64(x / repeat).unwrap());
             }
         }
 
+        let origin_id: &str = key_value[&options.origin_key].as_str().unwrap();
+        let destination_id: &str = key_value[&options.destination_key].as_str().unwrap();
+
         if let Some(ref points) = points_per_zone {
-            let points_in_o = &points[&origin_id];
-            let points_in_d = &points[&destination_id];
+            let points_in_o = &points[origin_id];
+            let points_in_d = &points[destination_id];
             for _ in 0..repeat as usize {
                 // TODO If a zone has no subpoints, fail -- bad input. Be clear about that.
                 // TODO Sample with replacement or not?
@@ -86,8 +95,8 @@ pub fn jitter(
                 output.push((vec![o, d].into(), key_value.clone()));
             }
         } else {
-            let origin_polygon = &zones[&origin_id];
-            let destination_polygon = &zones[&destination_id];
+            let origin_polygon = &zones[origin_id];
+            let destination_polygon = &zones[destination_id];
             for _ in 0..repeat as usize {
                 let o = random_pt(rng, origin_polygon);
                 let d = random_pt(rng, destination_polygon);
@@ -173,23 +182,11 @@ fn points_per_zone(
     return output;
 }
 
-fn convert_to_geojson(input: Vec<(LineString<f64>, HashMap<String, String>)>) -> GeoJson {
+fn convert_to_geojson(input: Vec<(LineString<f64>, Map<String, Value>)>) -> GeoJson {
     let geom_collection: geo::GeometryCollection<f64> =
         input.iter().map(|(geom, _)| geom.clone()).collect();
     let mut feature_collection = geojson::FeatureCollection::from(&geom_collection);
-    for (feature, (_, key_value)) in feature_collection.features.iter_mut().zip(input) {
-        let mut properties = serde_json::Map::new();
-        // TODO Preserve csv order
-        for (k, v) in key_value {
-            if let Ok(numeric) = v.parse::<f64>() {
-                // TODO Skip geocode1 and the special fields
-                // If it's numeric, express it that way in JSON
-                properties.insert(k, numeric.into());
-            } else {
-                // It's a string, let it be one in JSON
-                properties.insert(k, v.into());
-            }
-        }
+    for (feature, (_, properties)) in feature_collection.features.iter_mut().zip(input) {
         feature.properties = Some(properties);
     }
     GeoJson::from(feature_collection)
