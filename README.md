@@ -1,2 +1,3 @@
 # odjitter
-Disaggregate zone-based origin/destination data to specific points
+
+Don't rely on anything here yet, API in flux...
