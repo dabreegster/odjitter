@@ -11,6 +11,13 @@ use rand::rngs::StdRng;
 use rand::Rng;
 use serde_json::{Map, Value};
 
+// TODO Tests, or routines to check sums
+// TODO No unwraps -- good errors when zones are missing and such
+// TODO Use rstar for points, if larger case needs it
+
+// TODO Docs
+// TODO Setup github builds
+
 // TODO Weighted subpoints
 // TODO Grab subpoints from OSM road network
 // TODO Grab subpoints from OSM buildings, weighted
@@ -20,6 +27,9 @@ pub struct Options {
     /// contains less than this, it will appear in the output without transformation. Otherwise,
     /// the input row is repeated until the sum matches the original value, but each output row
     /// obeys this maximum.
+    ///
+    /// TODO Don't allow this to be 0
+    /// TODO If this is 1, it'd be more natural to set one "mode" column
     pub max_per_od: usize,
     pub subsample: Subsample,
     /// Which column in the OD row specifies the total number of trips to disaggregate?
@@ -59,6 +69,7 @@ pub fn jitter<P: AsRef<Path>>(
             None
         };
 
+    println!("Disaggregating OD data");
     for rec in csv::Reader::from_path(csv_path)?.deserialize() {
         // Transform from CSV directly into a JSON map, auto-detecting strings and numbers.
         // TODO Even if origin_key or destination_key looks like a number, force it into a string
@@ -133,6 +144,7 @@ pub fn load_zones(
     Ok(zones)
 }
 
+// TODO Dedupe points, or the sampling will be weird -- especially at intersections
 pub fn scrape_points(path: &str) -> Result<Vec<Point<f64>>> {
     let geojson_input = std::fs::read_to_string(path)?;
     let geojson = geojson_input.parse::<GeoJson>()?;
@@ -167,6 +179,7 @@ fn points_per_zone(
     points: Vec<Point<f64>>,
     zones: &HashMap<String, MultiPolygon<f64>>,
 ) -> HashMap<String, Vec<Point<f64>>> {
+    println!("Matching subpoints to zones");
     let mut output = HashMap::new();
     for (name, _) in zones {
         output.insert(name.clone(), Vec::<Point<f64>>::new());
@@ -182,6 +195,7 @@ fn points_per_zone(
     return output;
 }
 
+// TODO I think there ought to be an API directly in geojson to do this
 fn convert_to_geojson(input: Vec<(LineString<f64>, Map<String, Value>)>) -> GeoJson {
     let geom_collection: geo::GeometryCollection<f64> =
         input.iter().map(|(geom, _)| geom.clone()).collect();

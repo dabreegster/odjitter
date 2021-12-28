@@ -4,31 +4,88 @@ use std::io::Write;
 use anyhow::Result;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
+use structopt::StructOpt;
+
+#[derive(StructOpt)]
+#[structopt(
+    name = "odjitter",
+    about = "Disaggregate origin/destination data from zones to points"
+)]
+struct Args {
+    /// The path to a CSV file with aggregated origin/destination data
+    #[structopt(long)]
+    od_csv_path: String,
+
+    /// The path to a GeoJSON file with named zones
+    #[structopt(long)]
+    zones_path: String,
+
+    /// The path to a GeoJSON file where the disaggregated output will be written
+    #[structopt(long)]
+    output_path: String,
+
+    /// The path to a GeoJSON file with subpoints to sample from. If this isn't specified, random
+    /// points within each zone will be used instead.
+    #[structopt(long)]
+    subpoints_path: Option<String>,
+
+    /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
+    /// contains less than this, it will appear in the output without transformation. Otherwise,
+    /// the input row is repeated until the sum matches the original value, but each output row
+    /// obeys this maximum.
+    #[structopt(long)]
+    max_per_od: usize,
+
+    /// In the zones GeoJSON file, which property is the name of a zone
+    #[structopt(long, default_value = "InterZone")]
+    zone_name_key: String,
+    /// Which column in the OD row specifies the total number of trips to disaggregate?
+    #[structopt(long, default_value = "all")]
+    all_key: String,
+    /// Which column in the OD row specifies the zone where trips originate?
+    #[structopt(long, default_value = "geo_code1")]
+    origin_key: String,
+    /// Which column in the OD row specifies the zone where trips ends?
+    #[structopt(long, default_value = "geo_code2")]
+    destination_key: String,
+    /// By default, the output will be different every time the tool is run, based on a different
+    /// random number generator seed. Specify this to get deterministic behavior, given the same
+    /// input.
+    #[structopt(long)]
+    rng_seed: Option<u64>,
+}
 
 fn main() -> Result<()> {
-    let zones = odjitter::load_zones("data/zones.geojson", "InterZone")?;
-    println!("Scraped {} zones", zones.len());
+    let args = Args::from_args();
 
-    let all_subpoints = odjitter::scrape_points("data/road_network.geojson")?;
-    println!("Scraped {} subpoints", all_subpoints.len());
+    let zones = odjitter::load_zones(&args.zones_path, &args.zone_name_key)?;
+    println!("Scraped {} zones from {}", zones.len(), args.zones_path);
+
+    let subsample = if let Some(ref path) = args.subpoints_path {
+        let subpoints = odjitter::scrape_points(path)?;
+        println!("Scraped {} subpoints from {}", subpoints.len(), path);
+        odjitter::Subsample::UnweightedPoints(subpoints)
+    } else {
+        odjitter::Subsample::RandomPoints
+    };
 
     let options = odjitter::Options {
-        max_per_od: 10,
-        subsample: odjitter::Subsample::UnweightedPoints(all_subpoints),
-        all_key: "all".to_string(),
-        origin_key: "geo_code1".to_string(),
-        destination_key: "geo_code2".to_string(),
+        max_per_od: args.max_per_od,
+        subsample,
+        all_key: args.all_key,
+        origin_key: args.origin_key,
+        destination_key: args.destination_key,
     };
-    let gj = odjitter::jitter(
-        "data/od.csv",
-        &zones,
-        &mut StdRng::seed_from_u64(42),
-        options,
-    )?;
+    let mut rng = if let Some(seed) = args.rng_seed {
+        StdRng::seed_from_u64(seed)
+    } else {
+        StdRng::from_entropy()
+    };
+    let gj = odjitter::jitter(args.od_csv_path, &zones, &mut rng, options)?;
 
-    let mut file = File::create("output.geojson")?;
+    let mut file = File::create(&args.output_path)?;
     write!(file, "{}", serde_json::to_string_pretty(&gj)?)?;
-    println!("Wrote output.geojson");
+    println!("Wrote {}", args.output_path);
 
     Ok(())
 }
