@@ -14,6 +14,7 @@ use serde_json::{Map, Value};
 // TODO Tests, or routines to check sums
 // TODO No unwraps -- good errors when zones are missing and such
 // TODO Use rstar for points, if larger case needs it
+// TODO Use bufreaders/writers (but measure perf first)
 
 // TODO Docs
 // TODO Setup github builds

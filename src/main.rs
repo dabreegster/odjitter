@@ -2,61 +2,58 @@ use std::fs::File;
 use std::io::Write;
 
 use anyhow::Result;
+use clap::Parser;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use structopt::StructOpt;
 
-#[derive(StructOpt)]
-#[structopt(
-    name = "odjitter",
-    about = "Disaggregate origin/destination data from zones to points"
-)]
+#[derive(Parser)]
+#[clap(about, version, author)]
 struct Args {
     /// The path to a CSV file with aggregated origin/destination data
-    #[structopt(long)]
+    #[clap(long)]
     od_csv_path: String,
 
     /// The path to a GeoJSON file with named zones
-    #[structopt(long)]
+    #[clap(long)]
     zones_path: String,
 
     /// The path to a GeoJSON file where the disaggregated output will be written
-    #[structopt(long)]
+    #[clap(long)]
     output_path: String,
 
     /// The path to a GeoJSON file with subpoints to sample from. If this isn't specified, random
     /// points within each zone will be used instead.
-    #[structopt(long)]
+    #[clap(long)]
     subpoints_path: Option<String>,
 
     /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
     /// contains less than this, it will appear in the output without transformation. Otherwise,
     /// the input row is repeated until the sum matches the original value, but each output row
     /// obeys this maximum.
-    #[structopt(long)]
+    #[clap(long)]
     max_per_od: usize,
 
     /// In the zones GeoJSON file, which property is the name of a zone
-    #[structopt(long, default_value = "InterZone")]
+    #[clap(long, default_value = "InterZone")]
     zone_name_key: String,
     /// Which column in the OD row specifies the total number of trips to disaggregate?
-    #[structopt(long, default_value = "all")]
+    #[clap(long, default_value = "all")]
     all_key: String,
     /// Which column in the OD row specifies the zone where trips originate?
-    #[structopt(long, default_value = "geo_code1")]
+    #[clap(long, default_value = "geo_code1")]
     origin_key: String,
     /// Which column in the OD row specifies the zone where trips ends?
-    #[structopt(long, default_value = "geo_code2")]
+    #[clap(long, default_value = "geo_code2")]
     destination_key: String,
     /// By default, the output will be different every time the tool is run, based on a different
     /// random number generator seed. Specify this to get deterministic behavior, given the same
     /// input.
-    #[structopt(long)]
+    #[clap(long)]
     rng_seed: Option<u64>,
 }
 
 fn main() -> Result<()> {
-    let args = Args::from_args();
+    let args = Args::parse();
 
     let zones = odjitter::load_zones(&args.zones_path, &args.zone_name_key)?;
     println!("Scraped {} zones from {}", zones.len(), args.zones_path);
