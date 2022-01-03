@@ -14,7 +14,6 @@ use serde_json::{Map, Value};
 
 // TODO Tests, or routines to check sums
 // TODO No unwraps -- good errors when zones are missing and such
-// TODO Use rstar for points, if larger case needs it
 // TODO Use bufreaders/writers (but measure perf first)
 
 // TODO Docs
@@ -74,27 +73,43 @@ pub fn jitter<P: AsRef<Path>>(
 
     println!("Disaggregating OD data");
     for rec in csv::Reader::from_path(csv_path)?.deserialize() {
-        // Transform from CSV directly into a JSON map, auto-detecting strings and numbers.
-        // TODO Even if origin_key or destination_key looks like a number, force it into a string
-        let mut key_value: Map<String, Value> = rec?;
+        // It's tempting to deserialize directly into a serde_json::Map<String, Value> and
+        // auto-detect strings and numbers. But sadly, some input data has zone names that look
+        // numeric, and even contain leading zeros, which'll be lost. So first just grab raw
+        // strings
+        let string_map: HashMap<String, String> = rec?;
 
         // How many times will we jitter this one row?
-        let repeat =
-            (key_value[&options.all_key].as_f64().unwrap() / (options.max_per_od as f64)).ceil();
+        let repeat = if let Some(all) = string_map
+            .get(&options.all_key)
+            .and_then(|all| all.parse::<f64>().ok())
+        {
+            (all / options.max_per_od as f64).ceil()
+        } else {
+            bail!(
+                "{} doesn't have a {} column or the value isn't numeric; set all_key properly",
+                csv_path.display(),
+                options.all_key
+            );
+        };
 
-        // Scale all of the numeric values
-        for (key, value) in &mut key_value {
-            // ... but never the zone names, even if they look numeric!
-            if key == &options.origin_key || key == &options.destination_key {
-                continue;
-            }
-            if let Some(x) = value.as_f64() {
-                // Crashes on NaNs, infinity
-                *value = Value::Number(serde_json::Number::from_f64(x / repeat).unwrap());
-            }
+        // Transform to a JSON map
+        let mut json_map: Map<String, Value> = Map::new();
+        for (key, value) in string_map {
+            let json_value = if key == options.origin_key || key == options.destination_key {
+                // Never treat the origin/destination key as numeric
+                Value::String(value)
+            } else if let Ok(x) = value.parse::<f64>() {
+                // Scale all of the numeric values
+                // (Crashes on NaNs, infinity)
+                Value::Number(serde_json::Number::from_f64(x / repeat).unwrap())
+            } else {
+                Value::String(value)
+            };
+            json_map.insert(key, json_value);
         }
 
-        let origin_id = if let Some(Value::String(id)) = key_value.get(&options.origin_key) {
+        let origin_id = if let Some(Value::String(id)) = json_map.get(&options.origin_key) {
             id
         } else {
             bail!(
@@ -103,16 +118,16 @@ pub fn jitter<P: AsRef<Path>>(
                 options.origin_key
             );
         };
-        let destination_id =
-            if let Some(Value::String(id)) = key_value.get(&options.destination_key) {
-                id
-            } else {
-                bail!(
-                    "{} doesn't have a {} column; set destination_key properly",
-                    csv_path.display(),
-                    options.destination_key
-                );
-            };
+        let destination_id = if let Some(Value::String(id)) = json_map.get(&options.destination_key)
+        {
+            id
+        } else {
+            bail!(
+                "{} doesn't have a {} column; set destination_key properly",
+                csv_path.display(),
+                options.destination_key
+            );
+        };
 
         if let Some(ref points) = points_per_zone {
             let empty = Vec::new();
@@ -129,7 +144,7 @@ pub fn jitter<P: AsRef<Path>>(
                 // TODO Make sure o != d
                 let o = *points_in_o.choose(rng).unwrap();
                 let d = *points_in_d.choose(rng).unwrap();
-                output.push((vec![o, d].into(), key_value.clone()));
+                output.push((vec![o, d].into(), json_map.clone()));
             }
         } else {
             let origin_polygon = &zones[origin_id];
@@ -137,7 +152,7 @@ pub fn jitter<P: AsRef<Path>>(
             for _ in 0..repeat as usize {
                 let o = random_pt(rng, origin_polygon);
                 let d = random_pt(rng, destination_polygon);
-                output.push((vec![o, d].into(), key_value.clone()));
+                output.push((vec![o, d].into(), json_map.clone()));
             }
         }
     }
