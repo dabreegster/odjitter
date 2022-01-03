@@ -124,7 +124,7 @@ pub fn load_zones(
     geojson_path: &str,
     name_key: &str,
 ) -> Result<HashMap<String, MultiPolygon<f64>>> {
-    let geojson_input = std::fs::read_to_string(geojson_path)?;
+    let geojson_input = fs_err::read_to_string(geojson_path)?;
     let geojson = geojson_input.parse::<GeoJson>()?;
 
     let mut zones: HashMap<String, MultiPolygon<f64>> = HashMap::new();
@@ -148,7 +148,7 @@ pub fn load_zones(
 
 // TODO Dedupe points, or the sampling will be weird -- especially at intersections
 pub fn scrape_points(path: &str) -> Result<Vec<Point<f64>>> {
-    let geojson_input = std::fs::read_to_string(path)?;
+    let geojson_input = fs_err::read_to_string(path)?;
     let geojson = geojson_input.parse::<GeoJson>()?;
     let mut points = Vec::new();
     if let geojson::GeoJson::FeatureCollection(collection) = geojson {

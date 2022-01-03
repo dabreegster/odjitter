@@ -1,8 +1,8 @@
-use std::fs::File;
 use std::io::Write;
 
 use anyhow::Result;
 use clap::Parser;
+use fs_err::File;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
