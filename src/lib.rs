@@ -115,10 +115,16 @@ pub fn jitter<P: AsRef<Path>>(
             };
 
         if let Some(ref points) = points_per_zone {
-            let points_in_o = &points[origin_id];
-            let points_in_d = &points[destination_id];
+            let empty = Vec::new();
+            let points_in_o = points.get(origin_id).unwrap_or(&empty);
+            let points_in_d = points.get(destination_id).unwrap_or(&empty);
+            if points_in_o.is_empty() {
+                bail!("No subpoints for zone {}", origin_id);
+            }
+            if points_in_d.is_empty() {
+                bail!("No subpoints for zone {}", destination_id);
+            }
             for _ in 0..repeat as usize {
-                // TODO If a zone has no subpoints, fail -- bad input. Be clear about that.
                 // TODO Sample with replacement or not?
                 // TODO Make sure o != d
                 let o = *points_in_o.choose(rng).unwrap();
