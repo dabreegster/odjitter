@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use geo::algorithm::bounding_rect::BoundingRect;
 use geo::algorithm::contains::Contains;
 use geo_types::{LineString, MultiPolygon, Point};
@@ -62,6 +62,7 @@ pub fn jitter<P: AsRef<Path>>(
     rng: &mut StdRng,
     options: Options,
 ) -> Result<GeoJson> {
+    let csv_path = csv_path.as_ref();
     let mut output = Vec::new();
 
     let points_per_zone: Option<BTreeMap<String, Vec<Point<f64>>>> =
@@ -93,8 +94,25 @@ pub fn jitter<P: AsRef<Path>>(
             }
         }
 
-        let origin_id: &str = key_value[&options.origin_key].as_str().unwrap();
-        let destination_id: &str = key_value[&options.destination_key].as_str().unwrap();
+        let origin_id = if let Some(Value::String(id)) = key_value.get(&options.origin_key) {
+            id
+        } else {
+            bail!(
+                "{} doesn't have a {} column; set origin_key properly",
+                csv_path.display(),
+                options.origin_key
+            );
+        };
+        let destination_id =
+            if let Some(Value::String(id)) = key_value.get(&options.destination_key) {
+                id
+            } else {
+                bail!(
+                    "{} doesn't have a {} column; set destination_key properly",
+                    csv_path.display(),
+                    options.destination_key
+                );
+            };
 
         if let Some(ref points) = points_per_zone {
             let points_in_o = &points[origin_id];
