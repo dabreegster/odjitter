@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 use anyhow::Result;
@@ -9,6 +9,7 @@ use geojson::GeoJson;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 use rand::Rng;
+use rstar::{RTree, AABB};
 use serde_json::{Map, Value};
 
 // TODO Tests, or routines to check sums
@@ -63,9 +64,9 @@ pub fn jitter<P: AsRef<Path>>(
 ) -> Result<GeoJson> {
     let mut output = Vec::new();
 
-    let points_per_zone: Option<HashMap<String, Vec<Point<f64>>>> =
+    let points_per_zone: Option<BTreeMap<String, Vec<Point<f64>>>> =
         if let Subsample::UnweightedPoints(points) = options.subsample {
-            Some(points_per_zone(points, zones))
+            Some(points_per_polygon(points, zones))
         } else {
             None
         };
@@ -176,24 +177,27 @@ fn random_pt(rng: &mut StdRng, poly: &MultiPolygon<f64>) -> Point<f64> {
     }
 }
 
-fn points_per_zone(
+// TODO Share with rampfs
+fn points_per_polygon(
     points: Vec<Point<f64>>,
-    zones: &HashMap<String, MultiPolygon<f64>>,
-) -> HashMap<String, Vec<Point<f64>>> {
-    println!("Matching subpoints to zones");
-    let mut output = HashMap::new();
-    for (name, _) in zones {
-        output.insert(name.clone(), Vec::<Point<f64>>::new());
-    }
-    for point in points {
-        for (name, polygon) in zones {
-            if polygon.contains(&point) {
-                let point_list = output.get_mut(name).unwrap();
-                point_list.push(point);
+    polygons: &HashMap<String, MultiPolygon<f64>>,
+) -> BTreeMap<String, Vec<Point<f64>>> {
+    let tree = RTree::bulk_load(points);
+
+    let mut output = BTreeMap::new();
+    for (key, polygon) in polygons {
+        let mut pts_inside = Vec::new();
+        let bounds = polygon.bounding_rect().unwrap();
+        let envelope: AABB<Point<f64>> =
+            AABB::from_corners(bounds.min().into(), bounds.max().into());
+        for pt in tree.locate_in_envelope(&envelope) {
+            if polygon.contains(pt) {
+                pts_inside.push(*pt);
             }
         }
+        output.insert(key.clone(), pts_inside);
     }
-    return output;
+    output
 }
 
 // TODO I think there ought to be an API directly in geojson to do this
