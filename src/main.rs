@@ -50,6 +50,9 @@ struct Args {
     /// input.
     #[clap(long)]
     rng_seed: Option<u64>,
+    /// Guarantee that jittered points are at least this distance apart.
+    #[clap(long, default_value = "1.0")]
+    min_distance_meters: f64,
 }
 
 fn main() -> Result<()> {
@@ -72,6 +75,7 @@ fn main() -> Result<()> {
         all_key: args.all_key,
         origin_key: args.origin_key,
         destination_key: args.destination_key,
+        min_distance_meters: args.min_distance_meters,
     };
     let mut rng = if let Some(seed) = args.rng_seed {
         StdRng::seed_from_u64(seed)
