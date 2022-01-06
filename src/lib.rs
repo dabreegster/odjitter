@@ -4,6 +4,7 @@ use std::path::Path;
 use anyhow::{bail, Result};
 use geo::algorithm::bounding_rect::BoundingRect;
 use geo::algorithm::contains::Contains;
+use geo::algorithm::haversine_distance::HaversineDistance;
 use geo_types::{LineString, MultiPolygon, Point};
 use geojson::GeoJson;
 use rand::prelude::SliceRandom;
@@ -39,6 +40,8 @@ pub struct Options {
     pub origin_key: String,
     /// Which column in the OD row specifies the zone where trips ends?
     pub destination_key: String,
+    /// Guarantee that jittered points are at least this distance apart.
+    pub min_distance_meters: f64,
 }
 
 /// Specifies how specific points should be generated within a zone.
@@ -55,6 +58,10 @@ pub enum Subsample {
     UnweightedPoints(Vec<Point<f64>>),
 }
 
+/// TODO Describe what this does.
+///
+/// Note this assumes assumes all input is in the WGS84 coordinate system, and uses the Haversine
+/// formula to calculate distances.
 pub fn jitter<P: AsRef<Path>>(
     csv_path: P,
     zones: &HashMap<String, MultiPolygon<f64>>,
@@ -141,18 +148,30 @@ pub fn jitter<P: AsRef<Path>>(
             }
             for _ in 0..repeat as usize {
                 // TODO Sample with replacement or not?
-                // TODO Make sure o != d
-                let o = *points_in_o.choose(rng).unwrap();
-                let d = *points_in_d.choose(rng).unwrap();
-                output.push((vec![o, d].into(), json_map.clone()));
+                // TODO If there are no two subpoints that're greater than this distance, we'll
+                // infinite loop. Detect upfront, or maybe just give up after a fixed number of
+                // attempts?
+                loop {
+                    let o = *points_in_o.choose(rng).unwrap();
+                    let d = *points_in_d.choose(rng).unwrap();
+                    if o.haversine_distance(&d) >= options.min_distance_meters {
+                        output.push((vec![o, d].into(), json_map.clone()));
+                        break;
+                    }
+                }
             }
         } else {
             let origin_polygon = &zones[origin_id];
             let destination_polygon = &zones[destination_id];
             for _ in 0..repeat as usize {
-                let o = random_pt(rng, origin_polygon);
-                let d = random_pt(rng, destination_polygon);
-                output.push((vec![o, d].into(), json_map.clone()));
+                loop {
+                    let o = random_pt(rng, origin_polygon);
+                    let d = random_pt(rng, destination_polygon);
+                    if o.haversine_distance(&d) >= options.min_distance_meters {
+                        output.push((vec![o, d].into(), json_map.clone()));
+                        break;
+                    }
+                }
             }
         }
     }
