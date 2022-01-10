@@ -1,3 +1,8 @@
+//! This crate transforms origin/destination data aggregated by zone into a disaggregated form, by
+//! sampling specific points from the zone.
+//!
+//! TODO: Motivate and explain with a full example.
+
 #[cfg(test)]
 mod tests;
 
@@ -59,7 +64,17 @@ pub enum Subsample {
     UnweightedPoints(Vec<Point<f64>>),
 }
 
-/// TODO Describe what this does.
+/// This method transforms aggregate origin/destination pairs into a disaggregated form, by
+/// sampling specific points from the zone.
+///
+/// The input is a CSV file, with each row representing trips between an origin and destination,
+/// expressed as a named zone. The columns in the CSV file can break down the number of trips by
+/// different modes (like walking, cycling, etc).
+///
+/// Each input row is repeated some number of times, based on `max_per_od`. If the row originally
+/// represents 100 trips and `max_per_od` is 5, then the row will be repeated 20 times. Each time,
+/// the origin and destination will be transformed from the entire zone to a specific point within
+/// the zone, determined using the specified `Subsample`.
 ///
 /// Note this assumes assumes all input is in the WGS84 coordinate system, and uses the Haversine
 /// formula to calculate distances.
@@ -179,6 +194,8 @@ pub fn jitter<P: AsRef<Path>>(
     Ok(convert_to_geojson(output))
 }
 
+/// Extract multipolygon zones from a GeoJSON file, using the provided `name_key` as the key in the
+/// resulting map.
 pub fn load_zones(
     geojson_path: &str,
     name_key: &str,
@@ -212,6 +229,10 @@ pub fn load_zones(
     Ok(zones)
 }
 
+/// Extract all points from a GeoJSON file.
+///
+/// TODO: Note this only supports line strings right now, and that the returned points are not
+/// deduplicated.
 // TODO Dedupe points, or the sampling will be weird -- especially at intersections
 pub fn scrape_points(path: &str) -> Result<Vec<Point<f64>>> {
     let geojson_input = fs_err::read_to_string(path)?;
