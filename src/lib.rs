@@ -16,8 +16,6 @@ use rand::Rng;
 use rstar::{RTree, AABB};
 use serde_json::{Map, Value};
 
-// TODO Tests, or routines to check sums
-// TODO No unwraps -- good errors when zones are missing and such
 // TODO Use bufreaders/writers (but measure perf first)
 
 // TODO Docs
@@ -111,7 +109,7 @@ pub fn jitter<P: AsRef<Path>>(
                 Value::String(value)
             } else if let Ok(x) = value.parse::<f64>() {
                 // Scale all of the numeric values
-                // (Crashes on NaNs, infinity)
+                // TODO Crashes on NaNs, infinity
                 Value::Number(serde_json::Number::from_f64(x / repeat).unwrap())
             } else {
                 Value::String(value)
@@ -191,16 +189,23 @@ pub fn load_zones(
     let mut zones: HashMap<String, MultiPolygon<f64>> = HashMap::new();
     if let geojson::GeoJson::FeatureCollection(collection) = geojson {
         for feature in collection.features {
-            let zone_name = feature
+            if let Some(zone_name) = feature
                 .property(name_key)
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .to_string();
-            let gj_geom: geojson::Geometry = feature.geometry.unwrap();
-            let geo_geometry: geo_types::Geometry<f64> = gj_geom.try_into().unwrap();
-            if let geo_types::Geometry::MultiPolygon(mp) = geo_geometry {
-                zones.insert(zone_name, mp);
+                .and_then(|x| x.as_str())
+                .map(|x| x.to_string())
+            {
+                let gj_geom: geojson::Geometry = feature.geometry.unwrap();
+                let geo_geometry: geo_types::Geometry<f64> = gj_geom.try_into().unwrap();
+                // TODO Support polygons too
+                if let geo_types::Geometry::MultiPolygon(mp) = geo_geometry {
+                    zones.insert(zone_name, mp);
+                }
+            } else {
+                bail!(
+                    "Feature doesn't have a string zone name {}: {:?}",
+                    name_key,
+                    feature
+                );
             }
         }
     }
