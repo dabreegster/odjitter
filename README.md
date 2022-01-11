@@ -55,8 +55,8 @@ odjitter
     ## 
     ## For more information try --help
 
-To run algorithm you need three inputs, examples of which are provided
-in the `data/` folder of this repo:
+To run algorithm you need a minimum of three inputs, examples of which
+are provided in the `data/` folder of this repo:
 
 1.  A .csv file containing OD data with the first two columns containing
     zone IDs and subsequent columns representing trip counts:
@@ -111,6 +111,33 @@ head -6 data/road_network.geojson
     ## "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
     ## "features": [
     ## { "type": "Feature", "properties": { "osm_id": "3468", "name": "Albyn Place", "highway": "tertiary", "waterway": null, "aerialway": null, "barrier": null, "man_made": null, "access": null, "bicycle": null, "service": null, "z_order": 4, "other_tags": "\"lit\"=>\"yes\",\"lanes\"=>\"3\",\"maxspeed\"=>\"20 mph\",\"sidewalk\"=>\"both\",\"lanes:forward\"=>\"2\",\"lanes:backward\"=>\"1\"" }, "geometry": { "type": "LineString", "coordinates": [ [ -3.207438, 55.9533584 ], [ -3.2065953, 55.9535098 ] ] } },
+
+The `jitter` function requires you to set the maximum number of trips
+for all trips in the jittered result. A value of 1 will create a line
+for every trip in the dataset, a value above the maximum number of trips
+in the ‘all’ column in the OD ata will result in a jittered dataset that
+has the same number of desire lines as in the input (50 in this case).
+
+With reference to the test data in this repo, you can run the `jitter`
+command line tool as follows:
+
+``` bash
+odjitter --od-csv-path data/od.csv \
+  --zones-path data/zones.geojson \
+  --subpoints-path data/road_network.geojson \
+  --max-per-od 50 --output-path output_max50.geojson
+```
+
+    ## Scraped 7 zones from data/zones.geojson
+    ## Scraped 5073 subpoints from data/road_network.geojson
+    ## Disaggregating OD data
+    ## Wrote output_max50.geojson
+
+The figure below shows how the process works visually, with the left
+image showing unjittered results with origins and destinations going to
+zone centroids (as many if not most OD pairs are visualised), the
+central image showing the result after setting `max-per-od` argument to
+50
 
 # References
 
