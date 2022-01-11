@@ -55,6 +55,8 @@ odjitter
     ## 
     ## For more information try --help
 
+# Usage
+
 To run algorithm you need a minimum of three inputs, examples of which
 are provided in the `data/` folder of this repo:
 
@@ -149,14 +151,80 @@ odjitter --od-csv-path data/od.csv \
     ## Disaggregating OD data
     ## Wrote output_max10.geojson
 
-The figure below shows how the process works visually, with the left
-image showing unjittered results with origins and destinations going to
-zone centroids (as many if not most OD pairs are visualised), the
-central image showing the result after setting `max-per-od` argument to
-50, and the right hand figure showing the result after setting
-`max-per-od` to 10.
+# Outputs
+
+The figure below shows the output of the `jitter` commands above
+visually, with the left image showing unjittered results with origins
+and destinations going to zone centroids (as many if not most OD pairs
+are visualised), the central image showing the result after setting
+`max-per-od` argument to 50, and the right hand figure showing the
+result after setting `max-per-od` to 10.
 
 <img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-3.png" width="30%" />
+
+# Details
+
+For full details on `odjitter`’s arguments run `odjitter --help` which
+gives the following output:
+
+``` bash
+odjitter --help
+```
+
+    ## odjitter 0.1.0
+    ## Dustin Carlino <dabreegster@gmail.com
+    ## Disaggregate origin/destination data from zones to points
+    ## 
+    ## USAGE:
+    ##     odjitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --max-per-od <MAX_PER_OD>
+    ## 
+    ## OPTIONS:
+    ##         --all-key <ALL_KEY>
+    ##             Which column in the OD row specifies the total number of trips to disaggregate?
+    ##             [default: all]
+    ## 
+    ##         --destination-key <DESTINATION_KEY>
+    ##             Which column in the OD row specifies the zone where trips ends? [default: geo_code2]
+    ## 
+    ##     -h, --help
+    ##             Print help information
+    ## 
+    ##         --max-per-od <MAX_PER_OD>
+    ##             What's the maximum number of trips per output OD row that's allowed? If an input OD row
+    ##             contains less than this, it will appear in the output without transformation. Otherwise,
+    ##             the input row is repeated until the sum matches the original value, but each output row
+    ##             obeys this maximum
+    ## 
+    ##         --min-distance-meters <MIN_DISTANCE_METERS>
+    ##             Guarantee that jittered points are at least this distance apart [default: 1.0]
+    ## 
+    ##         --od-csv-path <OD_CSV_PATH>
+    ##             The path to a CSV file with aggregated origin/destination data
+    ## 
+    ##         --origin-key <ORIGIN_KEY>
+    ##             Which column in the OD row specifies the zone where trips originate? [default:
+    ##             geo_code1]
+    ## 
+    ##         --output-path <OUTPUT_PATH>
+    ##             The path to a GeoJSON file where the disaggregated output will be written
+    ## 
+    ##         --rng-seed <RNG_SEED>
+    ##             By default, the output will be different every time the tool is run, based on a
+    ##             different random number generator seed. Specify this to get deterministic behavior,
+    ##             given the same input
+    ## 
+    ##         --subpoints-path <SUBPOINTS_PATH>
+    ##             The path to a GeoJSON file with subpoints to sample from. If this isn't specified,
+    ##             random points within each zone will be used instead
+    ## 
+    ##     -V, --version
+    ##             Print version information
+    ## 
+    ##         --zone-name-key <ZONE_NAME_KEY>
+    ##             In the zones GeoJSON file, which property is the name of a zone [default: InterZone]
+    ## 
+    ##         --zones-path <ZONES_PATH>
+    ##             The path to a GeoJSON file with named zones
 
 # References
 
