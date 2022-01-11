@@ -63,19 +63,6 @@ are provided in the `data/` folder of this repo:
 1.  A .csv file containing OD data with the first two columns containing
     zone IDs and subsequent columns representing trip counts:
 
-<!-- -->
-
-    ## Rows: 49 Columns: 11
-
-    ## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr (2): geo_code1, geo_code2
-    ## dbl (9): all, from_home, train, bus, car_driver, car_passenger, bicycle, foo...
-
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
 | geo\_code1 | geo\_code2 | all | from\_home | train | bus | car\_driver | car\_passenger | bicycle | foot | other |
 |:-----------|:-----------|----:|-----------:|------:|----:|------------:|---------------:|--------:|-----:|------:|
 | S02001616  | S02001616  |  82 |          0 |     0 |   3 |           6 |              0 |       2 |   71 |     0 |
