@@ -156,12 +156,6 @@ central image showing the result after setting `max-per-od` argument to
 50, and the right hand figure showing the result after setting
 `max-per-od` to 10.
 
-    ## 0 origins with no match in zone ids
-
-    ## 0 destinations with no match in zone ids
-
-    ##  points not in od data removed.
-
 <img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-3.png" width="30%" />
 
 # References
