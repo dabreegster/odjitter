@@ -149,6 +149,10 @@ result after setting `max-per-od` to 10.
 
 <img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-3.png" width="30%" />
 
+Note: `odjitter` uses a random number generator to sample points, so the
+output will change each time you run it, unless you set the `rng-seed`,
+as documented in the next section.
+
 # Details
 
 For full details on `odjitter`’s arguments run `odjitter --help` which
