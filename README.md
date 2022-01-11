@@ -122,6 +122,7 @@ With reference to the test data in this repo, you can run the `jitter`
 command line tool as follows:
 
 ``` bash
+# With max-per-od of 50
 odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-path data/road_network.geojson \
@@ -133,11 +134,35 @@ odjitter --od-csv-path data/od.csv \
     ## Disaggregating OD data
     ## Wrote output_max50.geojson
 
+Try running it with a different `max-per-od` value:
+
+``` bash
+# With max-per-od of 10
+odjitter --od-csv-path data/od.csv \
+  --zones-path data/zones.geojson \
+  --subpoints-path data/road_network.geojson \
+  --max-per-od 10 --output-path output_max10.geojson
+```
+
+    ## Scraped 7 zones from data/zones.geojson
+    ## Scraped 5073 subpoints from data/road_network.geojson
+    ## Disaggregating OD data
+    ## Wrote output_max10.geojson
+
 The figure below shows how the process works visually, with the left
 image showing unjittered results with origins and destinations going to
 zone centroids (as many if not most OD pairs are visualised), the
 central image showing the result after setting `max-per-od` argument to
-50
+50, and the right hand figure showing the result after setting
+`max-per-od` to 10.
+
+    ## 0 origins with no match in zone ids
+
+    ## 0 destinations with no match in zone ids
+
+    ##  points not in od data removed.
+
+<img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-3.png" width="30%" />
 
 # References
 
