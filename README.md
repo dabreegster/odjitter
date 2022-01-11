@@ -60,8 +60,9 @@ odjitter
 To run algorithm you need a minimum of three inputs, examples of which
 are provided in the `data/` folder of this repo:
 
-1.  A .csv file containing OD data with the first two columns containing
-    zone IDs and subsequent columns representing trip counts:
+1.  A .csv file containing OD data with two columns containing zone IDs
+    (specified with `--origin-key=geo_code1 --destination-key=geo_code2`
+    by default) and other columns representing trip counts:
 
 | geo\_code1 | geo\_code2 | all | from\_home | train | bus | car\_driver | car\_passenger | bicycle | foot | other |
 |:-----------|:-----------|----:|-----------:|------:|----:|------------:|---------------:|--------:|-----:|------:|
@@ -71,8 +72,9 @@ are provided in the `data/` folder of this repo:
 
 1.  A [.geojson
     file](https://github.com/dabreegster/odjitter/blob/main/data/zones.geojson)
-    representing zones, with the first column matching the zone IDs in
-    the OD data (called InterZone in this case):
+    representing zones that contains values matching the zone IDs in the
+    OD data (the field containing zone IDs is specified with
+    `--zone-name-key=InterZone` by default):
 
 ``` bash
 head -6 data/zones.geojson
@@ -105,13 +107,13 @@ The `jitter` function requires you to set the maximum number of trips
 for all trips in the jittered result. A value of 1 will create a line
 for every trip in the dataset, a value above the maximum number of trips
 in the ‘all’ column in the OD ata will result in a jittered dataset that
-has the same number of desire lines as in the input (50 in this case).
+has the same number of desire lines (the geographic representation of OD
+pairs) as in the input (50 in this case).
 
 With reference to the test data in this repo, you can run the `jitter`
 command line tool as follows:
 
 ``` bash
-# With max-per-od of 50
 odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-path data/road_network.geojson \
@@ -123,10 +125,10 @@ odjitter --od-csv-path data/od.csv \
     ## Disaggregating OD data
     ## Wrote output_max50.geojson
 
-Try running it with a different `max-per-od` value:
+Try running it with a different `max-per-od` value (10 in the command
+below):
 
 ``` bash
-# With max-per-od of 10
 odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-path data/road_network.geojson \
