@@ -142,10 +142,10 @@ odjitter --od-csv-path data/od.csv \
 
 The figure below shows the output of the `jitter` commands above
 visually, with the left image showing unjittered results with origins
-and destinations going to zone centroids (as many if not most OD pairs
-are visualised), the central image showing the result after setting
-`max-per-od` argument to 50, and the right hand figure showing the
-result after setting `max-per-od` to 10.
+and destinations going to zone centroids (as in many if not most
+visualisations of desire lines between zones), the central image showing
+the result after setting `max-per-od` argument to 50, and the right hand
+figure showing the result after setting `max-per-od` to 10.
 
 <img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-3.png" width="30%" />
 
