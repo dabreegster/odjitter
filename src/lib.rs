@@ -7,6 +7,7 @@
 mod tests;
 
 use std::collections::{BTreeMap, HashMap};
+use std::io::Write;
 use std::path::Path;
 
 use anyhow::{bail, Result};
@@ -14,7 +15,7 @@ use geo::algorithm::bounding_rect::BoundingRect;
 use geo::algorithm::contains::Contains;
 use geo::algorithm::haversine_distance::HaversineDistance;
 use geo_types::{LineString, MultiPolygon, Point};
-use geojson::GeoJson;
+use geojson::{Feature, GeoJson};
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 use rand::Rng;
@@ -76,16 +77,18 @@ pub enum Subsample {
 /// the origin and destination will be transformed from the entire zone to a specific point within
 /// the zone, determined using the specified `Subsample`.
 ///
+/// The output is written as GeoJSON to the provided writer.
+///
 /// Note this assumes assumes all input is in the WGS84 coordinate system, and uses the Haversine
 /// formula to calculate distances.
-pub fn jitter<P: AsRef<Path>>(
+pub fn jitter<P: AsRef<Path>, W: Write>(
     csv_path: P,
     zones: &HashMap<String, MultiPolygon<f64>>,
     rng: &mut StdRng,
     options: Options,
-) -> Result<GeoJson> {
+    mut writer: W,
+) -> Result<()> {
     let csv_path = csv_path.as_ref();
-    let mut output = Vec::new();
 
     let points_per_zone: Option<BTreeMap<String, Vec<Point<f64>>>> =
         if let Subsample::UnweightedPoints(points) = options.subsample {
@@ -93,6 +96,11 @@ pub fn jitter<P: AsRef<Path>>(
         } else {
             None
         };
+
+    // Manually write GeoJSON, so we can write per feature, instead of collecting the whole
+    // FeatureCollection in memory
+    writeln!(writer, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
+    let mut add_comma = false;
 
     println!("Disaggregating OD data");
     for rec in csv::Reader::from_path(csv_path)?.deserialize() {
@@ -171,7 +179,12 @@ pub fn jitter<P: AsRef<Path>>(
                     let o = *points_in_o.choose(rng).unwrap();
                     let d = *points_in_d.choose(rng).unwrap();
                     if o.haversine_distance(&d) >= options.min_distance_meters {
-                        output.push((vec![o, d].into(), json_map.clone()));
+                        if add_comma {
+                            writeln!(writer, ",")?;
+                        } else {
+                            add_comma = true;
+                        }
+                        serde_json::to_writer(&mut writer, &to_geojson(o, d, json_map.clone()))?;
                         break;
                     }
                 }
@@ -184,14 +197,20 @@ pub fn jitter<P: AsRef<Path>>(
                     let o = random_pt(rng, origin_polygon);
                     let d = random_pt(rng, destination_polygon);
                     if o.haversine_distance(&d) >= options.min_distance_meters {
-                        output.push((vec![o, d].into(), json_map.clone()));
+                        if add_comma {
+                            writeln!(writer, ",")?;
+                        } else {
+                            add_comma = true;
+                        }
+                        serde_json::to_writer(&mut writer, &to_geojson(o, d, json_map.clone()))?;
                         break;
                     }
                 }
             }
         }
     }
-    Ok(convert_to_geojson(output))
+    writeln!(writer, "]}}")?;
+    Ok(())
 }
 
 /// Extract multipolygon zones from a GeoJSON file, using the provided `name_key` as the key in the
@@ -204,7 +223,7 @@ pub fn load_zones(
     let geojson = geojson_input.parse::<GeoJson>()?;
 
     let mut zones: HashMap<String, MultiPolygon<f64>> = HashMap::new();
-    if let geojson::GeoJson::FeatureCollection(collection) = geojson {
+    if let GeoJson::FeatureCollection(collection) = geojson {
         for feature in collection.features {
             if let Some(zone_name) = feature
                 .property(name_key)
@@ -238,7 +257,7 @@ pub fn scrape_points(path: &str) -> Result<Vec<Point<f64>>> {
     let geojson_input = fs_err::read_to_string(path)?;
     let geojson = geojson_input.parse::<GeoJson>()?;
     let mut points = Vec::new();
-    if let geojson::GeoJson::FeatureCollection(collection) = geojson {
+    if let GeoJson::FeatureCollection(collection) = geojson {
         for feature in collection.features {
             if let Some(geom) = feature.geometry {
                 let geo_geometry: geo_types::Geometry<f64> = geom.try_into().unwrap();
@@ -287,13 +306,17 @@ fn points_per_polygon(
     output
 }
 
-// TODO I think there ought to be an API directly in geojson to do this
-fn convert_to_geojson(input: Vec<(LineString<f64>, Map<String, Value>)>) -> GeoJson {
-    let geom_collection: geo::GeometryCollection<f64> =
-        input.iter().map(|(geom, _)| geom.clone()).collect();
-    let mut feature_collection = geojson::FeatureCollection::from(&geom_collection);
-    for (feature, (_, properties)) in feature_collection.features.iter_mut().zip(input) {
-        feature.properties = Some(properties);
+fn to_geojson(pt1: Point<f64>, pt2: Point<f64>, properties: Map<String, Value>) -> Feature {
+    let line_string: LineString<f64> = vec![pt1, pt2].into();
+    Feature {
+        geometry: Some(geojson::Geometry {
+            value: geojson::Value::from(&line_string),
+            bbox: None,
+            foreign_members: None,
+        }),
+        properties: Some(properties),
+        bbox: None,
+        id: None,
+        foreign_members: None,
     }
-    GeoJson::from(feature_collection)
 }

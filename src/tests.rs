@@ -21,7 +21,12 @@ fn test_sums_match() {
             min_distance_meters: 1.0,
         };
         let mut rng = StdRng::seed_from_u64(42);
-        let output = jitter("data/od.csv", &zones, &mut rng, options).unwrap();
+        let mut raw_output = Vec::new();
+        jitter("data/od.csv", &zones, &mut rng, options, &mut raw_output).unwrap();
+        let output = String::from_utf8(raw_output)
+            .unwrap()
+            .parse::<GeoJson>()
+            .unwrap();
 
         let output_sum = sum_trips_output(&output);
         let epsilon = 1e-6;

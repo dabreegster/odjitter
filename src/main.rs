@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use anyhow::Result;
 use clap::Parser;
 use fs_err::File;
@@ -82,10 +80,9 @@ fn main() -> Result<()> {
     } else {
         StdRng::from_entropy()
     };
-    let gj = odjitter::jitter(args.od_csv_path, &zones, &mut rng, options)?;
 
-    let mut file = File::create(&args.output_path)?;
-    write!(file, "{}", serde_json::to_string_pretty(&gj)?)?;
+    let mut file = std::io::BufWriter::new(File::create(&args.output_path)?);
+    odjitter::jitter(args.od_csv_path, &zones, &mut rng, options, &mut file)?;
     println!("Wrote {}", args.output_path);
 
     Ok(())
