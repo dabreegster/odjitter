@@ -3,6 +3,7 @@
 //!
 //! TODO: Motivate and explain with a full example.
 
+mod scrape;
 #[cfg(test)]
 mod tests;
 
@@ -14,13 +15,15 @@ use anyhow::{bail, Result};
 use geo::algorithm::bounding_rect::BoundingRect;
 use geo::algorithm::contains::Contains;
 use geo::algorithm::haversine_distance::HaversineDistance;
-use geo_types::{LineString, MultiPolygon, Point, Polygon, Rect};
+use geo_types::{LineString, MultiPolygon, Point, Rect};
 use geojson::{Feature, GeoJson};
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 use rand::Rng;
 use rstar::{RTree, AABB};
 use serde_json::{Map, Value};
+
+pub use self::scrape::scrape_points;
 
 // TODO Use bufreaders/writers (but measure perf first)
 
@@ -226,80 +229,6 @@ pub fn load_zones(
         }
     }
     Ok(zones)
-}
-
-/// Extract all points from a GeoJSON file.
-///
-/// TODO: Note that the returned points are not deduplicated.
-pub fn scrape_points(path: &str) -> Result<Vec<Point<f64>>> {
-    let geojson_input = fs_err::read_to_string(path)?;
-    let geojson = geojson_input.parse::<GeoJson>()?;
-    let mut points = Vec::new();
-    if let GeoJson::FeatureCollection(collection) = geojson {
-        for feature in collection.features {
-            if let Some(geom) = feature.geometry {
-                let geom: geo_types::Geometry<f64> = geom.try_into().unwrap();
-                points.extend(geometry_to_points(geom));
-            }
-        }
-    }
-    Ok(points)
-}
-
-fn geometry_to_points(geom: geo_types::Geometry<f64>) -> Vec<Point<f64>> {
-    // We can't use MapCoordsInplace
-    let mut points = Vec::new();
-    match geom {
-        geo_types::Geometry::Point(pt) => {
-            points.push(pt);
-        }
-        geo_types::Geometry::Line(line) => {
-            let (a, b) = line.points();
-            points.push(a);
-            points.push(b);
-        }
-        geo_types::Geometry::LineString(ls) => {
-            points.extend(ls.into_points());
-        }
-        geo_types::Geometry::Polygon(poly) => {
-            points.extend(polygon_to_points(poly));
-        }
-        geo_types::Geometry::MultiPoint(pts) => {
-            points.extend(pts);
-        }
-        geo_types::Geometry::MultiLineString(list) => {
-            for ls in list {
-                points.extend(ls.into_points());
-            }
-        }
-        geo_types::Geometry::MultiPolygon(list) => {
-            for poly in list {
-                points.extend(polygon_to_points(poly));
-            }
-        }
-        geo_types::Geometry::GeometryCollection(list) => {
-            for geom in list {
-                points.extend(geometry_to_points(geom));
-            }
-        }
-        geo_types::Geometry::Rect(rect) => {
-            points.extend(polygon_to_points(rect.to_polygon()));
-        }
-        geo_types::Geometry::Triangle(tri) => {
-            points.extend(polygon_to_points(tri.to_polygon()));
-        }
-    }
-    points
-}
-
-fn polygon_to_points(poly: Polygon<f64>) -> Vec<Point<f64>> {
-    let mut points = Vec::new();
-    let (exterior, interiors) = poly.into_inner();
-    points.extend(exterior.into_points());
-    for ls in interiors {
-        points.extend(ls.into_points());
-    }
-    points
 }
 
 // TODO Share with rampfs
