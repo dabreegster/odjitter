@@ -17,7 +17,8 @@ fn test_sums_match() {
         let subpoints = scrape_points("data/road_network.geojson").unwrap();
         let options = Options {
             max_per_od,
-            subsample: Subsample::UnweightedPoints(subpoints),
+            subsample_origin: Subsample::UnweightedPoints(subpoints.clone()),
+            subsample_destination: Subsample::UnweightedPoints(subpoints),
             all_key: "all".to_string(),
             origin_key: "geo_code1".to_string(),
             destination_key: "geo_code2".to_string(),
@@ -55,8 +56,8 @@ fn test_different_subpoints() {
 
     let options = Options {
         max_per_od: 1,
-        // TODO We need different strategies for origin and destination points
-        subsample: Subsample::UnweightedPoints(destination_subpoints),
+        subsample_origin: Subsample::RandomPoints,
+        subsample_destination: Subsample::UnweightedPoints(destination_subpoints),
         // TODO od_schools.csv doesn't have this
         all_key: "all".to_string(),
         origin_key: "origin".to_string(),
