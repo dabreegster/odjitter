@@ -19,10 +19,15 @@ struct Args {
     #[clap(long)]
     output_path: String,
 
-    /// The path to a GeoJSON file with subpoints to sample from. If this isn't specified, random
-    /// points within each zone will be used instead.
+    /// The path to a GeoJSON file to use for sampling subpoints for origin zones. If this isn't
+    /// specified, random points within each zone will be used instead.
     #[clap(long)]
-    subpoints_path: Option<String>,
+    subpoints_origins_path: Option<String>,
+
+    /// The path to a GeoJSON file to use for sampling subpoints for destination zones. If this
+    /// isn't specified, random points within each zone will be used instead.
+    #[clap(long)]
+    subpoints_destinations_path: Option<String>,
 
     /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
     /// contains less than this, it will appear in the output without transformation. Otherwise,
@@ -59,7 +64,14 @@ fn main() -> Result<()> {
     let zones = odjitter::load_zones(&args.zones_path, &args.zone_name_key)?;
     println!("Scraped {} zones from {}", zones.len(), args.zones_path);
 
-    let subsample = if let Some(ref path) = args.subpoints_path {
+    let subsample_origin = if let Some(ref path) = args.subpoints_origins_path {
+        let subpoints = odjitter::scrape_points(path)?;
+        println!("Scraped {} subpoints from {}", subpoints.len(), path);
+        odjitter::Subsample::UnweightedPoints(subpoints)
+    } else {
+        odjitter::Subsample::RandomPoints
+    };
+    let subsample_destination = if let Some(ref path) = args.subpoints_destinations_path {
         let subpoints = odjitter::scrape_points(path)?;
         println!("Scraped {} subpoints from {}", subpoints.len(), path);
         odjitter::Subsample::UnweightedPoints(subpoints)
@@ -69,7 +81,8 @@ fn main() -> Result<()> {
 
     let options = odjitter::Options {
         max_per_od: args.max_per_od,
-        subsample,
+        subsample_origin,
+        subsample_destination,
         all_key: args.all_key,
         origin_key: args.origin_key,
         destination_key: args.destination_key,

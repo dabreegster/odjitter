@@ -14,7 +14,7 @@ use anyhow::{bail, Result};
 use geo::algorithm::bounding_rect::BoundingRect;
 use geo::algorithm::contains::Contains;
 use geo::algorithm::haversine_distance::HaversineDistance;
-use geo_types::{LineString, MultiPolygon, Point};
+use geo_types::{LineString, MultiPolygon, Point, Rect};
 use geojson::{Feature, GeoJson};
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
@@ -27,10 +27,6 @@ use serde_json::{Map, Value};
 // TODO Docs
 // TODO Setup github builds
 
-// TODO Weighted subpoints
-// TODO Grab subpoints from OSM road network
-// TODO Grab subpoints from OSM buildings, weighted
-
 pub struct Options {
     /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
     /// contains less than this, it will appear in the output without transformation. Otherwise,
@@ -40,7 +36,10 @@ pub struct Options {
     /// TODO Don't allow this to be 0
     /// TODO If this is 1, it'd be more natural to set one "mode" column
     pub max_per_od: usize,
-    pub subsample: Subsample,
+    /// How to pick points from origin zones
+    pub subsample_origin: Subsample,
+    /// How to pick points from destination zones
+    pub subsample_destination: Subsample,
     /// Which column in the OD row specifies the total number of trips to disaggregate?
     pub all_key: String,
     /// Which column in the OD row specifies the zone where trips originate?
@@ -90,8 +89,14 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
 ) -> Result<()> {
     let csv_path = csv_path.as_ref();
 
-    let points_per_zone: Option<BTreeMap<String, Vec<Point<f64>>>> =
-        if let Subsample::UnweightedPoints(points) = options.subsample {
+    let points_per_origin_zone: Option<BTreeMap<String, Vec<Point<f64>>>> =
+        if let Subsample::UnweightedPoints(points) = options.subsample_origin {
+            Some(points_per_polygon(points, zones))
+        } else {
+            None
+        };
+    let points_per_destination_zone: Option<BTreeMap<String, Vec<Point<f64>>>> =
+        if let Subsample::UnweightedPoints(points) = options.subsample_destination {
             Some(points_per_polygon(points, zones))
         } else {
             None
@@ -160,51 +165,26 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
             );
         };
 
-        if let Some(ref points) = points_per_zone {
-            let empty = Vec::new();
-            let points_in_o = points.get(origin_id).unwrap_or(&empty);
-            let points_in_d = points.get(destination_id).unwrap_or(&empty);
-            if points_in_o.is_empty() {
-                bail!("No subpoints for zone {}", origin_id);
-            }
-            if points_in_d.is_empty() {
-                bail!("No subpoints for zone {}", destination_id);
-            }
-            for _ in 0..repeat as usize {
-                // TODO Sample with replacement or not?
-                // TODO If there are no two subpoints that're greater than this distance, we'll
-                // infinite loop. Detect upfront, or maybe just give up after a fixed number of
-                // attempts?
-                loop {
-                    let o = *points_in_o.choose(rng).unwrap();
-                    let d = *points_in_d.choose(rng).unwrap();
-                    if o.haversine_distance(&d) >= options.min_distance_meters {
-                        if add_comma {
-                            writeln!(writer, ",")?;
-                        } else {
-                            add_comma = true;
-                        }
-                        serde_json::to_writer(&mut writer, &to_geojson(o, d, json_map.clone()))?;
-                        break;
+        let origin_sampler =
+            Subsampler::new(&points_per_origin_zone, &zones[origin_id], origin_id)?;
+        let destination_sampler = Subsampler::new(
+            &points_per_destination_zone,
+            &zones[destination_id],
+            destination_id,
+        )?;
+
+        for _ in 0..repeat as usize {
+            loop {
+                let o = origin_sampler.sample(rng);
+                let d = destination_sampler.sample(rng);
+                if o.haversine_distance(&d) >= options.min_distance_meters {
+                    if add_comma {
+                        writeln!(writer, ",")?;
+                    } else {
+                        add_comma = true;
                     }
-                }
-            }
-        } else {
-            let origin_polygon = &zones[origin_id];
-            let destination_polygon = &zones[destination_id];
-            for _ in 0..repeat as usize {
-                loop {
-                    let o = random_pt(rng, origin_polygon);
-                    let d = random_pt(rng, destination_polygon);
-                    if o.haversine_distance(&d) >= options.min_distance_meters {
-                        if add_comma {
-                            writeln!(writer, ",")?;
-                        } else {
-                            add_comma = true;
-                        }
-                        serde_json::to_writer(&mut writer, &to_geojson(o, d, json_map.clone()))?;
-                        break;
-                    }
+                    serde_json::to_writer(&mut writer, &to_geojson(o, d, json_map.clone()))?;
+                    break;
                 }
             }
         }
@@ -271,18 +251,6 @@ pub fn scrape_points(path: &str) -> Result<Vec<Point<f64>>> {
     Ok(points)
 }
 
-fn random_pt(rng: &mut StdRng, poly: &MultiPolygon<f64>) -> Point<f64> {
-    let bounds = poly.bounding_rect().unwrap();
-    loop {
-        let x = rng.gen_range(bounds.min().x..=bounds.max().x);
-        let y = rng.gen_range(bounds.min().y..=bounds.max().y);
-        let pt = Point::new(x, y);
-        if poly.contains(&pt) {
-            return pt;
-        }
-    }
-}
-
 // TODO Share with rampfs
 fn points_per_polygon(
     points: Vec<Point<f64>>,
@@ -318,5 +286,52 @@ fn to_geojson(pt1: Point<f64>, pt2: Point<f64>, properties: Map<String, Value>) 
         bbox: None,
         id: None,
         foreign_members: None,
+    }
+}
+
+enum Subsampler<'a> {
+    RandomPoints(&'a MultiPolygon<f64>, Rect<f64>),
+    UnweightedPoints(&'a Vec<Point<f64>>),
+}
+
+impl<'a> Subsampler<'a> {
+    fn new(
+        points_per_zone: &'a Option<BTreeMap<String, Vec<Point<f64>>>>,
+        zone_polygon: &'a MultiPolygon<f64>,
+        zone_id: &String,
+    ) -> Result<Subsampler<'a>> {
+        if let Some(points_per_zone) = points_per_zone {
+            match points_per_zone.get(zone_id) {
+                Some(points) => Ok(Subsampler::UnweightedPoints(points)),
+                None => {
+                    bail!("No subpoints for zone {}", zone_id);
+                }
+            }
+        } else {
+            match zone_polygon.bounding_rect() {
+                Some(bounds) => Ok(Subsampler::RandomPoints(zone_polygon, bounds)),
+                None => bail!("can't calculate bounding box for zone {}", zone_id),
+            }
+        }
+    }
+
+    fn sample(&self, rng: &mut StdRng) -> Point<f64> {
+        match self {
+            Subsampler::RandomPoints(polygon, bounds) => loop {
+                let x = rng.gen_range(bounds.min().x..=bounds.max().x);
+                let y = rng.gen_range(bounds.min().y..=bounds.max().y);
+                let pt = Point::new(x, y);
+                if polygon.contains(&pt) {
+                    return pt;
+                }
+            },
+            Subsampler::UnweightedPoints(points) => {
+                // TODO Sample with replacement or not?
+                // TODO If there are no two subpoints that're greater than this distance, we'll
+                // infinite loop. Detect upfront, or maybe just give up after a fixed number of
+                // attempts?
+                *points.choose(rng).unwrap()
+            }
+        }
     }
 }
