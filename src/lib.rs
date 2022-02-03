@@ -14,7 +14,7 @@ use anyhow::{bail, Result};
 use geo::algorithm::bounding_rect::BoundingRect;
 use geo::algorithm::contains::Contains;
 use geo::algorithm::haversine_distance::HaversineDistance;
-use geo_types::{LineString, MultiPolygon, Point, Rect};
+use geo_types::{LineString, MultiPolygon, Point, Polygon, Rect};
 use geojson::{Feature, GeoJson};
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
@@ -230,9 +230,7 @@ pub fn load_zones(
 
 /// Extract all points from a GeoJSON file.
 ///
-/// TODO: Note this only supports line strings right now, and that the returned points are not
-/// deduplicated.
-// TODO Dedupe points, or the sampling will be weird -- especially at intersections
+/// TODO: Note that the returned points are not deduplicated.
 pub fn scrape_points(path: &str) -> Result<Vec<Point<f64>>> {
     let geojson_input = fs_err::read_to_string(path)?;
     let geojson = geojson_input.parse::<GeoJson>()?;
@@ -240,15 +238,68 @@ pub fn scrape_points(path: &str) -> Result<Vec<Point<f64>>> {
     if let GeoJson::FeatureCollection(collection) = geojson {
         for feature in collection.features {
             if let Some(geom) = feature.geometry {
-                let geo_geometry: geo_types::Geometry<f64> = geom.try_into().unwrap();
-                // TODO Scrape points from all types
-                if let geo_types::Geometry::LineString(ls) = geo_geometry {
-                    points.extend(ls.into_points());
-                }
+                let geom: geo_types::Geometry<f64> = geom.try_into().unwrap();
+                points.extend(geometry_to_points(geom));
             }
         }
     }
     Ok(points)
+}
+
+fn geometry_to_points(geom: geo_types::Geometry<f64>) -> Vec<Point<f64>> {
+    // We can't use MapCoordsInplace
+    let mut points = Vec::new();
+    match geom {
+        geo_types::Geometry::Point(pt) => {
+            points.push(pt);
+        }
+        geo_types::Geometry::Line(line) => {
+            let (a, b) = line.points();
+            points.push(a);
+            points.push(b);
+        }
+        geo_types::Geometry::LineString(ls) => {
+            points.extend(ls.into_points());
+        }
+        geo_types::Geometry::Polygon(poly) => {
+            points.extend(polygon_to_points(poly));
+        }
+        geo_types::Geometry::MultiPoint(pts) => {
+            points.extend(pts);
+        }
+        geo_types::Geometry::MultiLineString(list) => {
+            for ls in list {
+                points.extend(ls.into_points());
+            }
+        }
+        geo_types::Geometry::MultiPolygon(list) => {
+            for poly in list {
+                points.extend(polygon_to_points(poly));
+            }
+        }
+        geo_types::Geometry::GeometryCollection(list) => {
+            for geom in list {
+                points.extend(geometry_to_points(geom));
+            }
+        }
+        geo_types::Geometry::Rect(rect) => {
+            points.extend(polygon_to_points(rect.to_polygon()));
+        }
+        geo_types::Geometry::Triangle(tri) => {
+            points.extend(polygon_to_points(tri.to_polygon()));
+        }
+    }
+    points
+}
+
+fn polygon_to_points(poly: Polygon<f64>) -> Vec<Point<f64>> {
+    let mut points = Vec::new();
+    let (exterior, interiors) = poly.into_inner();
+    points.extend(exterior.into_points());
+    for ls in interiors {
+        points.extend(ls.into_points());
+    }
+    points
 }
 
 // TODO Share with rampfs
@@ -301,12 +352,12 @@ impl<'a> Subsampler<'a> {
         zone_id: &String,
     ) -> Result<Subsampler<'a>> {
         if let Some(points_per_zone) = points_per_zone {
-            match points_per_zone.get(zone_id) {
-                Some(points) => Ok(Subsampler::UnweightedPoints(points)),
-                None => {
-                    bail!("No subpoints for zone {}", zone_id);
+            if let Some(points) = points_per_zone.get(zone_id) {
+                if !points.is_empty() {
+                    return Ok(Subsampler::UnweightedPoints(points));
                 }
             }
+            bail!("No subpoints for zone {}", zone_id);
         } else {
             match zone_polygon.bounding_rect() {
                 Some(bounds) => Ok(Subsampler::RandomPoints(zone_polygon, bounds)),
