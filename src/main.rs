@@ -29,7 +29,7 @@ struct Args {
     /// the input row is repeated until the sum matches the original value, but each output row
     /// obeys this maximum.
     #[clap(long)]
-    max_per_od: usize,
+    disaggregation_threshold: usize,
 
     /// In the zones GeoJSON file, which property is the name of a zone
     #[clap(long, default_value = "InterZone")]
@@ -68,7 +68,7 @@ fn main() -> Result<()> {
     };
 
     let options = odjitter::Options {
-        max_per_od: args.max_per_od,
+        disaggregation_threshold: args.disaggregation_threshold,
         subsample,
         all_key: args.all_key,
         origin_key: args.origin_key,

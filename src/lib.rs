@@ -39,7 +39,7 @@ pub struct Options {
     ///
     /// TODO Don't allow this to be 0
     /// TODO If this is 1, it'd be more natural to set one "mode" column
-    pub max_per_od: usize,
+    pub disaggregation_threshold: usize,
     pub subsample: Subsample,
     /// Which column in the OD row specifies the total number of trips to disaggregate?
     pub all_key: String,
@@ -72,8 +72,8 @@ pub enum Subsample {
 /// expressed as a named zone. The columns in the CSV file can break down the number of trips by
 /// different modes (like walking, cycling, etc).
 ///
-/// Each input row is repeated some number of times, based on `max_per_od`. If the row originally
-/// represents 100 trips and `max_per_od` is 5, then the row will be repeated 20 times. Each time,
+/// Each input row is repeated some number of times, based on `disaggregation_threshold`. If the row originally
+/// represents 100 trips and `disaggregation_threshold` is 5, then the row will be repeated 20 times. Each time,
 /// the origin and destination will be transformed from the entire zone to a specific point within
 /// the zone, determined using the specified `Subsample`.
 ///
@@ -115,7 +115,7 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
             .get(&options.all_key)
             .and_then(|all| all.parse::<f64>().ok())
         {
-            (all / options.max_per_od as f64).ceil()
+            (all / options.disaggregation_threshold as f64).ceil()
         } else {
             bail!(
                 "{} doesn't have a {} column or the value isn't numeric; set all_key properly",

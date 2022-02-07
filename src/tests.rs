@@ -10,10 +10,10 @@ fn test_sums_match() {
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
     let input_sum = sum_trips_input("data/od.csv");
 
-    for max_per_od in [1, 10, 100, 1000] {
+    for disaggregation_threshold in [1, 10, 100, 1000] {
         let subpoints = scrape_points("data/road_network.geojson").unwrap();
         let options = Options {
-            max_per_od,
+            disaggregation_threshold,
             subsample: Subsample::UnweightedPoints(subpoints),
             all_key: "all".to_string(),
             origin_key: "geo_code1".to_string(),
@@ -32,10 +32,10 @@ fn test_sums_match() {
         let epsilon = 1e-6;
         assert!(
             (input_sum - output_sum).abs() < epsilon,
-            "Number of trips in input {} and jittered output {} don't match for max_per_od = {}",
+            "Number of trips in input {} and jittered output {} don't match for disaggregation_threshold = {}",
             input_sum,
             output_sum,
-            max_per_od
+            disaggregation_threshold
         );
 
         // TODO Test that sums match for each mode

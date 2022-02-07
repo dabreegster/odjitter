@@ -48,10 +48,10 @@ odjitter
     ##     --od-csv-path <OD_CSV_PATH>
     ##     --zones-path <ZONES_PATH>
     ##     --output-path <OUTPUT_PATH>
-    ##     --max-per-od <MAX_PER_OD>
+    ##     --disaggregation-threshold <MAX_PER_OD>
     ## 
     ## USAGE:
-    ##     odjitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --max-per-od <MAX_PER_OD>
+    ##     odjitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --disaggregation-threshold <MAX_PER_OD>
     ## 
     ## For more information try --help
 
@@ -117,7 +117,7 @@ command line tool as follows:
 odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-path data/road_network.geojson \
-  --max-per-od 50 --output-path output_max50.geojson
+  --disaggregation-threshold 50 --output-path output_max50.geojson
 ```
 
     ## Scraped 7 zones from data/zones.geojson
@@ -125,14 +125,14 @@ odjitter --od-csv-path data/od.csv \
     ## Disaggregating OD data
     ## Wrote output_max50.geojson
 
-Try running it with a different `max-per-od` value (10 in the command
+Try running it with a different `disaggregation-threshold` value (10 in the command
 below):
 
 ``` bash
 odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-path data/road_network.geojson \
-  --max-per-od 10 --output-path output_max10.geojson
+  --disaggregation-threshold 10 --output-path output_max10.geojson
 ```
 
     ## Scraped 7 zones from data/zones.geojson
@@ -146,8 +146,8 @@ The figure below shows the output of the `jitter` commands above
 visually, with the left image showing unjittered results with origins
 and destinations going to zone centroids (as in many if not most
 visualisations of desire lines between zones), the central image showing
-the result after setting `max-per-od` argument to 50, and the right hand
-figure showing the result after setting `max-per-od` to 10.
+the result after setting `disaggregation-threshold` argument to 50, and the right hand
+figure showing the result after setting `disaggregation-threshold` to 10.
 
 <img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="30%" /><img src="README_files/figure-gfm/unnamed-chunk-9-3.png" width="30%" />
 
@@ -169,7 +169,7 @@ odjitter --help
     ## Disaggregate origin/destination data from zones to points
     ## 
     ## USAGE:
-    ##     odjitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --max-per-od <MAX_PER_OD>
+    ##     odjitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --disaggregation-threshold <MAX_PER_OD>
     ## 
     ## OPTIONS:
     ##         --all-key <ALL_KEY>
@@ -182,7 +182,7 @@ odjitter --help
     ##     -h, --help
     ##             Print help information
     ## 
-    ##         --max-per-od <MAX_PER_OD>
+    ##         --disaggregation-threshold <MAX_PER_OD>
     ##             What's the maximum number of trips per output OD row that's allowed? If an input OD row
     ##             contains less than this, it will appear in the output without transformation. Otherwise,
     ##             the input row is repeated until the sum matches the original value, but each output row
