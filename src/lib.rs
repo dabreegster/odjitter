@@ -42,7 +42,7 @@ pub struct Options {
     pub disaggregation_threshold: usize,
     pub subsample: Subsample,
     /// Which column in the OD row specifies the total number of trips to disaggregate?
-    pub all_key: String,
+    pub disaggregation_key: String,
     /// Which column in the OD row specifies the zone where trips originate?
     pub origin_key: String,
     /// Which column in the OD row specifies the zone where trips ends?
@@ -112,15 +112,15 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
 
         // How many times will we jitter this one row?
         let repeat = if let Some(all) = string_map
-            .get(&options.all_key)
+            .get(&options.disaggregation_key)
             .and_then(|all| all.parse::<f64>().ok())
         {
             (all / options.disaggregation_threshold as f64).ceil()
         } else {
             bail!(
-                "{} doesn't have a {} column or the value isn't numeric; set all_key properly",
+                "{} doesn't have a {} column or the value isn't numeric; set disaggregation_key properly",
                 csv_path.display(),
-                options.all_key
+                options.disaggregation_key
             );
         };
 

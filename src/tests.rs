@@ -15,7 +15,7 @@ fn test_sums_match() {
         let options = Options {
             disaggregation_threshold,
             subsample: Subsample::UnweightedPoints(subpoints),
-            all_key: "all".to_string(),
+            disaggregation_key: "all".to_string(),
             origin_key: "geo_code1".to_string(),
             destination_key: "geo_code2".to_string(),
             min_distance_meters: 1.0,

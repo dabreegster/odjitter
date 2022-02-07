@@ -172,7 +172,7 @@ odjitter --help
     ##     odjitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --disaggregation-threshold <MAX_PER_OD>
     ## 
     ## OPTIONS:
-    ##         --all-key <ALL_KEY>
+    ##         --disaggregation-key <ALL_KEY>
     ##             Which column in the OD row specifies the total number of trips to disaggregate?
     ##             [default: all]
     ## 
