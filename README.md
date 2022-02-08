@@ -1,7 +1,3 @@
-<!-- Note: do not edit the README.md file directly. -->
-<!-- Edit README.qmd and rebuild with the following command (install quarto first) -->
-<!-- quarto render README.qmd -->
-
 <div class="cell">
 
 </div>
@@ -73,20 +69,19 @@ are provided in the `data/` folder of this repo:
 
 1.  A .csv file containing OD data with two columns containing zone IDs
     (specified with `--origin-key=geo_code1 --destination-key=geo_code2`
-    by default) and other columns representing trip counts: ::: {.cell}
+    by default) and other columns representing trip counts:
 
-::: ::: {.cell} ::: {.cell-output-display} \|geo_code1 \|geo_code2 \|
-all\| from_home\| train\| bus\| car_driver\| car_passenger\| bicycle\|
-foot\| other\|
-\|:———\|:———\|—:\|———:\|—–:\|—:\|———-:\|————-:\|——-:\|—-:\|—–:\|
-\|S02001616 \|S02001616 \| 82\| 0\| 0\| 3\| 6\| 0\| 2\| 71\| 0\|
-\|S02001616 \|S02001620 \| 188\| 0\| 0\| 42\| 26\| 3\| 11\| 105\| 1\|
-\|S02001616 \|S02001621 \| 99\| 0\| 0\| 13\| 7\| 3\| 15\| 61\| 0\| :::
-::: 2. A [.geojson
-file](https://github.com/dabreegster/odjitter/blob/main/data/zones.geojson)
-representing zones that contains values matching the zone IDs in the OD
-data (the field containing zone IDs is specified with
-`--zone-name-key=InterZone` by default): ::: {.cell}
+| geo_code1 | geo_code2 | all | from_home | train | bus | car_driver | car_passenger | bicycle | foot | other |
+|:----------|:----------|----:|----------:|------:|----:|-----------:|--------------:|--------:|-----:|------:|
+| S02001616 | S02001616 |  82 |         0 |     0 |   3 |          6 |             0 |       2 |   71 |     0 |
+| S02001616 | S02001620 | 188 |         0 |     0 |  42 |         26 |             3 |      11 |  105 |     1 |
+| S02001616 | S02001621 |  99 |         0 |     0 |  13 |          7 |             3 |      15 |   61 |     0 |
+
+2.  A [.geojson
+    file](https://github.com/dabreegster/odjitter/blob/main/data/zones.geojson)
+    representing zones that contains values matching the zone IDs in the
+    OD data (the field containing zone IDs is specified with
+    `--zone-name-key=InterZone` by default): ::: {.cell}
 
 ::: ::: {.cell}
 
