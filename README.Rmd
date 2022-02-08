@@ -67,7 +67,8 @@ With reference to the test data in this repo, you can run the `jitter` command l
 ```{bash}
 odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
-  --subpoints-path data/road_network.geojson \
+  --subpoints-origins-path data/road_network.geojson \
+  --subpoints-destinations-path data/road_network.geojson \
   --max-per-od 50 --output-path output_max50.geojson
 ```
 
@@ -76,7 +77,8 @@ Try running it with a different `max-per-od` value (10 in the command below):
 ```{bash}
 odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
-  --subpoints-path data/road_network.geojson \
+  --subpoints-origins-path data/road_network.geojson \
+  --subpoints-destinations-path data/road_network.geojson \
   --max-per-od 10 --output-path output_max10.geojson
 ```
 

@@ -279,7 +279,7 @@ impl<'a> Subsampler<'a> {
     fn new(
         points_per_zone: &'a Option<BTreeMap<String, Vec<Point<f64>>>>,
         zone_polygon: &'a MultiPolygon<f64>,
-        zone_id: &String,
+        zone_id: &str,
     ) -> Result<Subsampler<'a>> {
         if let Some(points_per_zone) = points_per_zone {
             if let Some(points) = points_per_zone.get(zone_id) {
