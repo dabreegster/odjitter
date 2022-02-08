@@ -23,11 +23,21 @@ struct Args {
     /// specified, random points within each zone will be used instead.
     #[clap(long)]
     subpoints_origins_path: Option<String>,
+    /// If specified, this column will be used to more frequently choose subpoints in
+    /// `subpoints_origins_path` with a higher weight value. Otherwise all subpoints will be
+    /// equally likely to be chosen.
+    #[clap(long)]
+    weight_key_origins: Option<String>,
 
     /// The path to a GeoJSON file to use for sampling subpoints for destination zones. If this
     /// isn't specified, random points within each zone will be used instead.
     #[clap(long)]
     subpoints_destinations_path: Option<String>,
+    /// If specified, this column will be used to more frequently choose subpoints in
+    /// `subpoints_destinations_path` with a higher weight value. Otherwise all subpoints will be
+    /// equally likely to be chosen.
+    #[clap(long)]
+    weight_key_destinations: Option<String>,
 
     /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
     /// contains less than this, it will appear in the output without transformation. Otherwise,
@@ -65,16 +75,16 @@ fn main() -> Result<()> {
     println!("Scraped {} zones from {}", zones.len(), args.zones_path);
 
     let subsample_origin = if let Some(ref path) = args.subpoints_origins_path {
-        let subpoints = odjitter::scrape_points(path)?;
+        let subpoints = odjitter::scrape_points(path, args.weight_key_origins)?;
         println!("Scraped {} subpoints from {}", subpoints.len(), path);
-        odjitter::Subsample::UnweightedPoints(subpoints)
+        odjitter::Subsample::WeightedPoints(subpoints)
     } else {
         odjitter::Subsample::RandomPoints
     };
     let subsample_destination = if let Some(ref path) = args.subpoints_destinations_path {
-        let subpoints = odjitter::scrape_points(path)?;
+        let subpoints = odjitter::scrape_points(path, args.weight_key_destinations)?;
         println!("Scraped {} subpoints from {}", subpoints.len(), path);
-        odjitter::Subsample::UnweightedPoints(subpoints)
+        odjitter::Subsample::WeightedPoints(subpoints)
     } else {
         odjitter::Subsample::RandomPoints
     };

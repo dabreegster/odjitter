@@ -244,7 +244,8 @@ odjitter --od-csv-path data/od_schools.csv \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/schools.geojson \
   --disaggregation-key car \
-  --disaggregation-threshold 10 --output-path output_max10_schools.geojson
+  --disaggregation-threshold 10 \
+  --output-path output_max10_schools.geojson
 ```
 
 <div class="cell-output-stdout">
@@ -259,6 +260,38 @@ odjitter --od-csv-path data/od_schools.csv \
 
 </div>
 
+You can also set weights associated with each origin and destination in
+the input data. The following example weights trips to schools
+proportional to the values in the ‘weight’ key for each imaginary data
+point represented in the `schools.geojson` object:
+
+<div class="cell">
+
+``` bash
+./target/debug/odjitter --od-csv-path data/od_schools.csv \
+  --zones-path data/zones.geojson \
+  --origin-key origin \
+  --destination-key destination \
+  --subpoints-origins-path data/road_network.geojson \
+  --subpoints-destinations-path data/schools.geojson \
+  --disaggregation-key car \
+  --disaggregation-threshold 10 \
+  --weight-key-destinations weight \
+  --output-path output_max10_schools_with_weights.geojson
+```
+
+<div class="cell-output-stdout">
+
+    Scraped 7 zones from data/zones.geojson
+    Scraped 5073 subpoints from data/road_network.geojson
+    Scraped 31 subpoints from data/schools.geojson
+    Disaggregating OD data
+    Wrote output_max10_schools_with_weights.geojson
+
+</div>
+
+</div>
+
 # Details
 
 For full details on `odjitter`’s arguments run `odjitter --help` which
@@ -267,7 +300,7 @@ gives the following output:
 <div class="cell">
 
 ``` bash
-odjitter --help
+./target/debug/odjitter --help
 ```
 
 <div class="cell-output-stdout">
@@ -324,6 +357,16 @@ odjitter --help
 
         -V, --version
                 Print version information
+
+            --weight-key-destinations <WEIGHT_KEY_DESTINATIONS>
+                If specified, this column will be used to more frequently choose subpoints in
+                `subpoints_destinations_path` with a higher weight value. Otherwise all subpoints will
+                be equally likely to be chosen
+
+            --weight-key-origins <WEIGHT_KEY_ORIGINS>
+                If specified, this column will be used to more frequently choose subpoints in
+                `subpoints_origins_path` with a higher weight value. Otherwise all subpoints will be
+                equally likely to be chosen
 
             --zone-name-key <ZONE_NAME_KEY>
                 In the zones GeoJSON file, which property is the name of a zone [default: InterZone]

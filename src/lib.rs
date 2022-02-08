@@ -21,7 +21,7 @@ use geojson::{Feature, GeoJson};
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 use rand::Rng;
-use rstar::{RTree, AABB};
+use rstar::{RTree, RTreeObject, AABB};
 use serde_json::{Map, Value};
 
 pub use self::scrape::scrape_points;
@@ -60,12 +60,27 @@ pub enum Subsample {
     ///
     /// Note that "within" excludes points directly on the zone's boundary.
     RandomPoints,
-    /// Sample uniformly at random from these points within the zone's shape.
+    /// Sample from points within the zone's shape, where each point has a relative weight.
     ///
     /// Note that "within" excludes points directly on the zone's boundary. If a point lies in more
     /// than one zone, it'll be assigned to any of those zones arbitrarily. (This means the input
     /// zones overlap.)
-    UnweightedPoints(Vec<Point<f64>>),
+    WeightedPoints(Vec<WeightedPoint>),
+}
+
+/// A point with an associated relative weight. Higher weights are more likely to be sampled.
+#[derive(Clone)]
+pub struct WeightedPoint {
+    pub point: Point<f64>,
+    pub weight: f64,
+}
+
+impl RTreeObject for WeightedPoint {
+    type Envelope = AABB<[f64; 2]>;
+
+    fn envelope(&self) -> Self::Envelope {
+        AABB::from_point([self.point.x(), self.point.y()])
+    }
 }
 
 /// This method transforms aggregate origin/destination pairs into a disaggregated form, by
@@ -93,14 +108,14 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
 ) -> Result<()> {
     let csv_path = csv_path.as_ref();
 
-    let points_per_origin_zone: Option<BTreeMap<String, Vec<Point<f64>>>> =
-        if let Subsample::UnweightedPoints(points) = options.subsample_origin {
+    let points_per_origin_zone: Option<BTreeMap<String, Vec<WeightedPoint>>> =
+        if let Subsample::WeightedPoints(points) = options.subsample_origin {
             Some(points_per_polygon(points, zones))
         } else {
             None
         };
-    let points_per_destination_zone: Option<BTreeMap<String, Vec<Point<f64>>>> =
-        if let Subsample::UnweightedPoints(points) = options.subsample_destination {
+    let points_per_destination_zone: Option<BTreeMap<String, Vec<WeightedPoint>>> =
+        if let Subsample::WeightedPoints(points) = options.subsample_destination {
             Some(points_per_polygon(points, zones))
         } else {
             None
@@ -240,20 +255,21 @@ pub fn load_zones(
 
 // TODO Share with rampfs
 fn points_per_polygon(
-    points: Vec<Point<f64>>,
+    points: Vec<WeightedPoint>,
     polygons: &HashMap<String, MultiPolygon<f64>>,
-) -> BTreeMap<String, Vec<Point<f64>>> {
+) -> BTreeMap<String, Vec<WeightedPoint>> {
     let tree = RTree::bulk_load(points);
 
     let mut output = BTreeMap::new();
     for (key, polygon) in polygons {
         let mut pts_inside = Vec::new();
         let bounds = polygon.bounding_rect().unwrap();
-        let envelope: AABB<Point<f64>> =
-            AABB::from_corners(bounds.min().into(), bounds.max().into());
+        let min = bounds.min();
+        let max = bounds.max();
+        let envelope: AABB<[f64; 2]> = AABB::from_corners([min.x, min.y], [max.x, max.y]);
         for pt in tree.locate_in_envelope(&envelope) {
-            if polygon.contains(pt) {
-                pts_inside.push(*pt);
+            if polygon.contains(&pt.point) {
+                pts_inside.push(pt.clone());
             }
         }
         output.insert(key.clone(), pts_inside);
@@ -278,19 +294,19 @@ fn to_geojson(pt1: Point<f64>, pt2: Point<f64>, properties: Map<String, Value>) 
 
 enum Subsampler<'a> {
     RandomPoints(&'a MultiPolygon<f64>, Rect<f64>),
-    UnweightedPoints(&'a Vec<Point<f64>>),
+    WeightedPoints(&'a Vec<WeightedPoint>),
 }
 
 impl<'a> Subsampler<'a> {
     fn new(
-        points_per_zone: &'a Option<BTreeMap<String, Vec<Point<f64>>>>,
+        points_per_zone: &'a Option<BTreeMap<String, Vec<WeightedPoint>>>,
         zone_polygon: &'a MultiPolygon<f64>,
         zone_id: &str,
     ) -> Result<Subsampler<'a>> {
         if let Some(points_per_zone) = points_per_zone {
             if let Some(points) = points_per_zone.get(zone_id) {
                 if !points.is_empty() {
-                    return Ok(Subsampler::UnweightedPoints(points));
+                    return Ok(Subsampler::WeightedPoints(points));
                 }
             }
             bail!("No subpoints for zone {}", zone_id);
@@ -312,12 +328,12 @@ impl<'a> Subsampler<'a> {
                     return pt;
                 }
             },
-            Subsampler::UnweightedPoints(points) => {
+            Subsampler::WeightedPoints(points) => {
                 // TODO Sample with replacement or not?
                 // TODO If there are no two subpoints that're greater than this distance, we'll
                 // infinite loop. Detect upfront, or maybe just give up after a fixed number of
                 // attempts?
-                *points.choose(rng).unwrap()
+                points.choose_weighted(rng, |pt| pt.weight).unwrap().point
             }
         }
     }
