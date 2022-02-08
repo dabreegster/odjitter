@@ -94,11 +94,13 @@ odjitter --od-csv-path data/od.csv \
   --disaggregation-threshold 50 --output-path output_max10.geojson
 ```
 
+<!-- Tidy up -->
+
 # Outputs
 
 The figure below shows the output of the `jitter` commands above visually, with the left image showing unjittered results with origins and destinations going to zone centroids (as in many if not most visualisations of desire lines between zones), the central image showing the result after setting `disaggregation-threshold` argument to 50, and the right hand figure showing the result after setting `disaggregation-threshold` to 10.
 
-```{r, echo=FALSE, fig.show='hold', out.width="30%", message=FALSE, eval=FALSE}
+```{r thresholddemo, echo=FALSE, fig.show='hold', out.width="30%", message=FALSE, eval=FALSE}
 # Note: code to generate the visualisation below
 zones = sf::read_sf("data/zones.geojson")
 network = sf::read_sf("data/road_network.geojson")
@@ -118,21 +120,21 @@ plot(sf::read_sf("output_max10.geojson")$geometry, add = TRUE)
 
 <div class="cell-output-display">
 
-<img src="README_files/figure-gfm/unnamed-chunk-18-1.png"
+<img src="output-1-unjittered.png"
 style="width:30.0%" />
 
 </div>
 
 <div class="cell-output-display">
 
-<img src="README_files/figure-gfm/unnamed-chunk-18-2.png"
+<img src="output-2-threshold-50.png"
 style="width:30.0%" />
 
 </div>
 
 <div class="cell-output-display">
 
-<img src="README_files/figure-gfm/unnamed-chunk-18-3.png"
+<img src="output-3-threshold-10.png"
 style="width:30.0%" />
 
 </div>
@@ -153,4 +155,6 @@ odjitter --help
 
 Lovelace, Robin, Rosa Félix, and Dustin Carlino Under Review Jittering: A Computationally Efficient Method for Generating Realistic Route Networks from Origin-Destination Data. TBC.
 
-Wickham, Hadley 2016 ggplot2: Elegant Graphics for Data Analysis. 2nd ed. 2016 edition. New York, NY: Springer.
+```{bash, echo=FALSE}
+rm output_max*
+```

@@ -184,6 +184,8 @@ odjitter --od-csv-path data/od.csv \
 
 </div>
 
+<!-- Tidy up -->
+
 # Outputs
 
 The figure below shows the output of the `jitter` commands above
@@ -202,21 +204,21 @@ the right hand figure showing the result after setting
 
 <div class="cell-output-display">
 
-<img src="README_files/figure-gfm/unnamed-chunk-18-1.png"
+<img src="output-1-unjittered.png"
 style="width:30.0%" />
 
 </div>
 
 <div class="cell-output-display">
 
-<img src="README_files/figure-gfm/unnamed-chunk-18-2.png"
+<img src="output-2-threshold-50.png"
 style="width:30.0%" />
 
 </div>
 
 <div class="cell-output-display">
 
-<img src="README_files/figure-gfm/unnamed-chunk-18-3.png"
+<img src="output-3-threshold-10.png"
 style="width:30.0%" />
 
 </div>
@@ -309,5 +311,6 @@ Lovelace, Robin, Rosa Félix, and Dustin Carlino Under Review Jittering:
 A Computationally Efficient Method for Generating Realistic Route
 Networks from Origin-Destination Data. TBC.
 
-Wickham, Hadley 2016 ggplot2: Elegant Graphics for Data Analysis. 2nd
-ed. 2016 edition. New York, NY: Springer.
+<div class="cell">
+
+</div>
