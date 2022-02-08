@@ -69,22 +69,22 @@ odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
-  --max-per-od 50 --output-path output_max50.geojson
+  --disaggregation-threshold 50 --output-path output_max50.geojson
 ```
 
-Try running it with a different `max-per-od` value (10 in the command below):
+Try running it with a different `disaggregation-threshold` value (10 in the command below):
 
 ```{bash}
 odjitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
-  --max-per-od 10 --output-path output_max10.geojson
+  --disaggregation-threshold 50 --output-path output_max10.geojson
 ```
 
 # Outputs
 
-The figure below shows the output of the `jitter` commands above visually, with the left image showing unjittered results with origins and destinations going to zone centroids (as in many if not most visualisations of desire lines between zones), the central image showing the result after setting `max-per-od` argument to 50, and the right hand figure showing the result after setting `max-per-od` to 10.
+The figure below shows the output of the `jitter` commands above visually, with the left image showing unjittered results with origins and destinations going to zone centroids (as in many if not most visualisations of desire lines between zones), the central image showing the result after setting `disaggregation-threshold` argument to 50, and the right hand figure showing the result after setting `disaggregation-threshold` to 10.
 
 ```{r, echo=FALSE, fig.show='hold', out.width="30%", message=FALSE}
 zones = sf::read_sf("data/zones.geojson")

@@ -34,14 +34,14 @@ struct Args {
     /// the input row is repeated until the sum matches the original value, but each output row
     /// obeys this maximum.
     #[clap(long)]
-    max_per_od: usize,
+    disaggregation_threshold: usize,
 
     /// In the zones GeoJSON file, which property is the name of a zone
     #[clap(long, default_value = "InterZone")]
     zone_name_key: String,
     /// Which column in the OD row specifies the total number of trips to disaggregate?
     #[clap(long, default_value = "all")]
-    all_key: String,
+    disaggregation_key: String,
     /// Which column in the OD row specifies the zone where trips originate?
     #[clap(long, default_value = "geo_code1")]
     origin_key: String,
@@ -80,10 +80,10 @@ fn main() -> Result<()> {
     };
 
     let options = odjitter::Options {
-        max_per_od: args.max_per_od,
+        disaggregation_threshold: args.disaggregation_threshold,
         subsample_origin,
         subsample_destination,
-        all_key: args.all_key,
+        disaggregation_key: args.disaggregation_key,
         origin_key: args.origin_key,
         destination_key: args.destination_key,
         min_distance_meters: args.min_distance_meters,

@@ -13,13 +13,13 @@ fn test_sums_match() {
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
     let input_sums = sum_trips_input("data/od.csv", &["all", "car_driver", "foot"]);
 
-    for max_per_od in [1, 10, 100, 1000] {
+    for disaggregation_threshold in [1, 10, 100, 1000] {
         let subpoints = scrape_points("data/road_network.geojson").unwrap();
         let options = Options {
-            max_per_od,
+            disaggregation_threshold,
             subsample_origin: Subsample::UnweightedPoints(subpoints.clone()),
             subsample_destination: Subsample::UnweightedPoints(subpoints),
-            all_key: "all".to_string(),
+            disaggregation_key: "all".to_string(),
             origin_key: "geo_code1".to_string(),
             destination_key: "geo_code2".to_string(),
             min_distance_meters: 1.0,
@@ -38,11 +38,11 @@ fn test_sums_match() {
             let epsilon = 1e-6;
             assert!(
                 (input_sum - output_sum).abs() < epsilon,
-                "Number of {} trips in input {} and jittered output {} don't match for max_per_od = {}",
+                "Number of {} trips in input {} and jittered output {} don't match for disaggregation_threshold = {}",
                 column,
                 input_sum,
                 output_sum,
-                max_per_od
+                disaggregation_threshold
             );
         }
     }
@@ -56,10 +56,10 @@ fn test_different_subpoints() {
     let schools: HashSet<_> = destination_subpoints.iter().map(hashify_point).collect();
 
     let options = Options {
-        max_per_od: 1,
+        disaggregation_threshold: 1,
         subsample_origin: Subsample::RandomPoints,
         subsample_destination: Subsample::UnweightedPoints(destination_subpoints),
-        all_key: "walk".to_string(),
+        disaggregation_key: "walk".to_string(),
         origin_key: "origin".to_string(),
         destination_key: "destination".to_string(),
         min_distance_meters: 1.0,
@@ -101,7 +101,7 @@ fn test_different_subpoints() {
     }
 
     // Also make sure sums match, so rows are preserved properly. This input data has 0 for some
-    // all_key rows. (Ideally this would be a separate test)
+    // disaggregation_key rows. (Ideally this would be a separate test)
     let input_sums = sum_trips_input("data/od_schools.csv", &["walk", "bike", "other", "car"]);
     for (column, input_sum) in input_sums {
         let output_sum = sum_trips_output(&output, &column);
@@ -137,11 +137,15 @@ fn sum_trips_input(csv_path: &str, keys: &[&str]) -> HashMap<String, f64> {
 }
 
 // TODO Refactor helpers -- probably also return a HashMap here
-fn sum_trips_output(gj: &GeoJson, all_key: &str) -> f64 {
+fn sum_trips_output(gj: &GeoJson, disaggregation_key: &str) -> f64 {
     let mut total = 0.0;
     if let GeoJson::FeatureCollection(fc) = gj {
         for feature in &fc.features {
-            total += feature.property(all_key).unwrap().as_f64().unwrap();
+            total += feature
+                .property(disaggregation_key)
+                .unwrap()
+                .as_f64()
+                .unwrap();
         }
     }
     total

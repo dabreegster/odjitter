@@ -38,13 +38,13 @@ pub struct Options {
     ///
     /// TODO Don't allow this to be 0
     /// TODO If this is 1, it'd be more natural to set one "mode" column
-    pub max_per_od: usize,
+    pub disaggregation_threshold: usize,
+    /// Which column in the OD row specifies the total number of trips to disaggregate?
+    pub disaggregation_key: String,
     /// How to pick points from origin zones
     pub subsample_origin: Subsample,
     /// How to pick points from destination zones
     pub subsample_destination: Subsample,
-    /// Which column in the OD row specifies the total number of trips to disaggregate?
-    pub all_key: String,
     /// Which column in the OD row specifies the zone where trips originate?
     pub origin_key: String,
     /// Which column in the OD row specifies the zone where trips ends?
@@ -74,10 +74,10 @@ pub enum Subsample {
 /// expressed as a named zone. The columns in the CSV file can break down the number of trips by
 /// different modes (like walking, cycling, etc).
 ///
-/// Each input row is repeated some number of times, based on `max_per_od`. If the row originally
-/// represents 100 trips and `max_per_od` is 5, then the row will be repeated 20 times. Each time,
-/// the origin and destination will be transformed from the entire zone to a specific point within
-/// the zone, determined using the specified `Subsample`.
+/// Each input row is repeated some number of times, based on `disaggregation_threshold`. If the
+/// row originally represents 100 trips and `disaggregation_threshold` is 5, then the row will be
+/// repeated 20 times. Each time, the origin and destination will be transformed from the entire
+/// zone to a specific point within the zone, determined using the specified `Subsample`.
 ///
 /// The output is written as GeoJSON to the provided writer.
 ///
@@ -118,17 +118,18 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
         // strings
         let string_map: HashMap<String, String> = rec?;
 
-        // How many times will we jitter this one row? This will be 0 if all_key is 0 for this row.
-        let repeat = if let Some(all) = string_map
-            .get(&options.all_key)
-            .and_then(|all| all.parse::<f64>().ok())
+        // How many times will we jitter this one row? This will be 0 if disaggregation_key is 0
+        // for this row.
+        let repeat = if let Some(count) = string_map
+            .get(&options.disaggregation_key)
+            .and_then(|count| count.parse::<f64>().ok())
         {
-            (all / options.max_per_od as f64).ceil()
+            (count / options.disaggregation_threshold as f64).ceil()
         } else {
             bail!(
-                "{} doesn't have a {} column or the value isn't numeric; set all_key properly",
+                "{} doesn't have a {} column or the value isn't numeric; set disaggregation_key properly",
                 csv_path.display(),
-                options.all_key
+                options.disaggregation_key
             );
         };
 
@@ -139,7 +140,7 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
                 // Never treat the origin/destination key as numeric
                 Value::String(value)
             } else if let Ok(x) = value.parse::<f64>() {
-                // Scale all of the numeric values, unless all_key for this row is 0
+                // Scale all of the numeric values, unless disaggregation_key for this row is 0
                 let scaled = if repeat == 0.0 { x } else { x / repeat };
                 Value::Number(serde_json::Number::from_f64(scaled).unwrap())
             } else {
