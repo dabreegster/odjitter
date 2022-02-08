@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use geo_types::Point;
 use geojson::GeoJson;
@@ -11,7 +11,7 @@ use crate::{jitter, load_zones, scrape_points, Options, Subsample};
 #[test]
 fn test_sums_match() {
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
-    let input_sum = sum_trips_input("data/od.csv", "all");
+    let input_sums = sum_trips_input("data/od.csv", &["all", "car_driver", "foot"]);
 
     for max_per_od in [1, 10, 100, 1000] {
         let subpoints = scrape_points("data/road_network.geojson").unwrap();
@@ -32,17 +32,19 @@ fn test_sums_match() {
             .parse::<GeoJson>()
             .unwrap();
 
-        let output_sum = sum_trips_output(&output, "all");
-        let epsilon = 1e-6;
-        assert!(
-            (input_sum - output_sum).abs() < epsilon,
-            "Number of trips in input {} and jittered output {} don't match for max_per_od = {}",
-            input_sum,
-            output_sum,
-            max_per_od
-        );
-
-        // TODO Test that sums match for each mode
+        for (column, input_sum) in &input_sums {
+            let input_sum = *input_sum;
+            let output_sum = sum_trips_output(&output, column);
+            let epsilon = 1e-6;
+            assert!(
+                (input_sum - output_sum).abs() < epsilon,
+                "Number of {} trips in input {} and jittered output {} don't match for max_per_od = {}",
+                column,
+                input_sum,
+                output_sum,
+                max_per_od
+            );
+        }
     }
 }
 
@@ -100,30 +102,41 @@ fn test_different_subpoints() {
 
     // Also make sure sums match, so rows are preserved properly. This input data has 0 for some
     // all_key rows. (Ideally this would be a separate test)
-    let input_sum = sum_trips_input("data/od_schools.csv", "walk");
-    let output_sum = sum_trips_output(&output, "walk");
-    let epsilon = 1e-6;
-    assert!(
-        (input_sum - output_sum).abs() < epsilon,
-        "Number of trips in input {} and jittered output {} don't match",
-        input_sum,
-        output_sum,
-    );
+    let input_sums = sum_trips_input("data/od_schools.csv", &["walk", "bike", "other", "car"]);
+    for (column, input_sum) in input_sums {
+        let output_sum = sum_trips_output(&output, &column);
+        let epsilon = 1e-6;
+        assert!(
+            (input_sum - output_sum).abs() < epsilon,
+            "Number of {} trips in input {} and jittered output {} don't match",
+            column,
+            input_sum,
+            output_sum,
+        );
+    }
 }
 
 // TODO Test zone names that look numeric and contain leading 0's
 
-fn sum_trips_input(csv_path: &str, all_key: &str) -> f64 {
-    let mut total = 0.0;
+fn sum_trips_input(csv_path: &str, keys: &[&str]) -> HashMap<String, f64> {
+    let mut totals = HashMap::new();
+    for key in keys {
+        totals.insert(key.to_string(), 0.0);
+    }
     for rec in csv::Reader::from_path(csv_path).unwrap().deserialize() {
         let map: Map<String, Value> = rec.unwrap();
-        if let Value::Number(x) = &map[all_key] {
-            total += x.as_f64().unwrap();
+        for key in keys {
+            if let Value::Number(x) = &map[*key] {
+                // or_insert is redundant
+                let total = totals.entry(key.to_string()).or_insert(0.0);
+                *total += x.as_f64().unwrap();
+            }
         }
     }
-    total
+    totals
 }
 
+// TODO Refactor helpers -- probably also return a HashMap here
 fn sum_trips_output(gj: &GeoJson, all_key: &str) -> f64 {
     let mut total = 0.0;
     if let GeoJson::FeatureCollection(fc) = gj {
