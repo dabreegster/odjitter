@@ -229,6 +229,61 @@ Note: `odjitter` uses a random number generator to sample points, so the
 output will change each time you run it, unless you set the `rng-seed`,
 as documented in the next section.
 
+The `subpoints-origins-path` and `subpoints-destinations-path` can be
+used to generate jittered desire lines that start from or go to
+particular points, defined in .geojson files. We will demonstrate this
+on a simple imaginary example:
+
+<div class="cell">
+
+``` bash
+head data/od_schools.csv
+```
+
+<div class="cell-output-stdout">
+
+    origin,destination,walk,bike,other,car
+    S02001616,S02001616,232,8,70,0
+    S02001620,S02001616,87,3,26,223
+    S02001621,S02001616,80,3,24,250
+    S02001622,S02001616,64,2,19,348
+    S02001623,S02001616,52,2,15,464
+    S02001656,S02001616,62,2,19,366
+    S02001660,S02001616,77,3,23,266
+    S02001616,S02001620,7,0,2,17
+    S02001620,S02001620,18,1,5,0
+
+</div>
+
+</div>
+
+Set the origin, destination, and threshold keys as follows:
+
+<div class="cell">
+
+``` bash
+odjitter --od-csv-path data/od_schools.csv \
+  --zones-path data/zones.geojson \
+  --origin-key origin \
+  --destination-key destination \
+  --subpoints-origins-path data/road_network.geojson \
+  --subpoints-destinations-path data/schools.geojson \
+  --disaggregation-key bike \
+  --disaggregation-threshold 10 --output-path output_max10_schools.geojson
+```
+
+<div class="cell-output-stdout">
+
+    Scraped 7 zones from data/zones.geojson
+    Scraped 5073 subpoints from data/road_network.geojson
+    Scraped 31 subpoints from data/schools.geojson
+    Disaggregating OD data
+    Wrote output_max10_schools.geojson
+
+</div>
+
+</div>
+
 # Details
 
 For full details on `odjitter`’s arguments run `odjitter --help` which

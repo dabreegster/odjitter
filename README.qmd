@@ -143,6 +143,27 @@ style="width:30.0%" />
 
 Note: `odjitter` uses a random number generator to sample points, so the output will change each time you run it, unless you set the `rng-seed`, as documented in the next section.
 
+The `subpoints-origins-path` and `subpoints-destinations-path` can be used to generate jittered desire lines that start from or go to particular points, defined in .geojson files.
+We will demonstrate this on a simple imaginary example:
+
+```{bash}
+head data/od_schools.csv
+```
+
+Set the origin, destination, and threshold keys as follows:
+
+```{bash}
+odjitter --od-csv-path data/od_schools.csv \
+  --zones-path data/zones.geojson \
+  --origin-key origin \
+  --destination-key destination \
+  --subpoints-origins-path data/road_network.geojson \
+  --subpoints-destinations-path data/schools.geojson \
+  --disaggregation-key bike \
+  --disaggregation-threshold 10 --output-path output_max10_schools.geojson
+```
+
+
 # Details
 
 For full details on `odjitter`'s arguments run `odjitter --help` which gives the following output:
