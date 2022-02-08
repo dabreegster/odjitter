@@ -14,11 +14,11 @@ fn test_sums_match() {
     let input_sums = sum_trips_input("data/od.csv", &["all", "car_driver", "foot"]);
 
     for disaggregation_threshold in [1, 10, 100, 1000] {
-        let subpoints = scrape_points("data/road_network.geojson").unwrap();
+        let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
         let options = Options {
             disaggregation_threshold,
-            subsample_origin: Subsample::UnweightedPoints(subpoints.clone()),
-            subsample_destination: Subsample::UnweightedPoints(subpoints),
+            subsample_origin: Subsample::WeightedPoints(subpoints.clone()),
+            subsample_destination: Subsample::WeightedPoints(subpoints),
             disaggregation_key: "all".to_string(),
             origin_key: "geo_code1".to_string(),
             destination_key: "geo_code2".to_string(),
@@ -51,14 +51,18 @@ fn test_sums_match() {
 #[test]
 fn test_different_subpoints() {
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
-    let destination_subpoints = scrape_points("data/schools.geojson").unwrap();
+    let destination_subpoints =
+        scrape_points("data/schools.geojson", Some("weight".to_string())).unwrap();
     // Keep a copy of the schools as a set
-    let schools: HashSet<_> = destination_subpoints.iter().map(hashify_point).collect();
+    let schools: HashSet<_> = destination_subpoints
+        .iter()
+        .map(|pt| hashify_point(&pt.point))
+        .collect();
 
     let options = Options {
         disaggregation_threshold: 1,
         subsample_origin: Subsample::RandomPoints,
-        subsample_destination: Subsample::UnweightedPoints(destination_subpoints),
+        subsample_destination: Subsample::WeightedPoints(destination_subpoints),
         disaggregation_key: "walk".to_string(),
         origin_key: "origin".to_string(),
         destination_key: "destination".to_string(),
