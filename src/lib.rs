@@ -118,7 +118,7 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
         // strings
         let string_map: HashMap<String, String> = rec?;
 
-        // How many times will we jitter this one row?
+        // How many times will we jitter this one row? This will be 0 if all_key is 0 for this row.
         let repeat = if let Some(all) = string_map
             .get(&options.all_key)
             .and_then(|all| all.parse::<f64>().ok())
@@ -139,9 +139,9 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
                 // Never treat the origin/destination key as numeric
                 Value::String(value)
             } else if let Ok(x) = value.parse::<f64>() {
-                // Scale all of the numeric values
-                // TODO Crashes on NaNs, infinity
-                Value::Number(serde_json::Number::from_f64(x / repeat).unwrap())
+                // Scale all of the numeric values, unless all_key for this row is 0
+                let scaled = if repeat == 0.0 { x } else { x / repeat };
+                Value::Number(serde_json::Number::from_f64(scaled).unwrap())
             } else {
                 Value::String(value)
             };
