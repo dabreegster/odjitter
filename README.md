@@ -9,12 +9,11 @@
 # odjitter
 
 This crate contains an implementation of the ‘jittering’ technique for
-pre-processing origin-destination (OD) data. Jittering in a data
-visualisation context refers to the addition of “random noise to the
-data” to prevent points in graphs from overlapping, as described in by
-Wickham et al. ([2016](https://ggplot2-book.org/)) and in the
-documentation page for the function
-[`geom_jitter()`](https://ggplot2.tidyverse.org/reference/geom_jitter.html).
+pre-processing origin-destination (OD) data. Jittering in a [data
+visualisation
+context](https://ggplot2-book.org/layers.html?q=noise#position) refers
+to the addition of random noise to the location of points, preventing
+them overlapping.
 
 In the context of OD data jittering refers to randomly moving start and
 end points associated with OD pairs, as described in an under review
@@ -28,9 +27,6 @@ around 1000 times faster than the R implementation.
 
 The crate is still a work in progress: the API may change. Issues and
 pull requests are particularly useful at this stage.
-
-<!-- Todo: add worked example. Will do for GISRUK paper -->
-<!-- An illustration of its functionality is shown below. -->
 
 # Installation
 
@@ -78,19 +74,19 @@ are provided in the `data/` folder of this repo:
 1.  A .csv file containing OD data with two columns containing zone IDs
     (specified with `--origin-key=geo_code1 --destination-key=geo_code2`
     by default) and other columns representing trip counts: ::: {.cell}
-    ::: {.cell-output-display} \|geo_code1 \|geo_code2 \| all\|
-    from_home\| train\| bus\| car_driver\| car_passenger\| bicycle\|
-    foot\| other\|
-    \|:———\|:———\|—:\|———:\|—–:\|—:\|———-:\|————-:\|——-:\|—-:\|—–:\|
-    \|S02001616 \|S02001616 \| 82\| 0\| 0\| 3\| 6\| 0\| 2\| 71\| 0\|
-    \|S02001616 \|S02001620 \| 188\| 0\| 0\| 42\| 26\| 3\| 11\| 105\|
-    1\| \|S02001616 \|S02001621 \| 99\| 0\| 0\| 13\| 7\| 3\| 15\| 61\|
-    0\| ::: :::
-2.  A [.geojson
-    file](https://github.com/dabreegster/odjitter/blob/main/data/zones.geojson)
-    representing zones that contains values matching the zone IDs in the
-    OD data (the field containing zone IDs is specified with
-    `--zone-name-key=InterZone` by default): ::: {.cell}
+
+::: ::: {.cell} ::: {.cell-output-display} \|geo_code1 \|geo_code2 \|
+all\| from_home\| train\| bus\| car_driver\| car_passenger\| bicycle\|
+foot\| other\|
+\|:———\|:———\|—:\|———:\|—–:\|—:\|———-:\|————-:\|——-:\|—-:\|—–:\|
+\|S02001616 \|S02001616 \| 82\| 0\| 0\| 3\| 6\| 0\| 2\| 71\| 0\|
+\|S02001616 \|S02001620 \| 188\| 0\| 0\| 42\| 26\| 3\| 11\| 105\| 1\|
+\|S02001616 \|S02001621 \| 99\| 0\| 0\| 13\| 7\| 3\| 15\| 61\| 0\| :::
+::: 2. A [.geojson
+file](https://github.com/dabreegster/odjitter/blob/main/data/zones.geojson)
+representing zones that contains values matching the zone IDs in the OD
+data (the field containing zone IDs is specified with
+`--zone-name-key=InterZone` by default): ::: {.cell}
 
 ::: ::: {.cell}
 
@@ -197,6 +193,10 @@ visualisations of desire lines between zones), the central image showing
 the result after setting `disaggregation-threshold` argument to 50, and
 the right hand figure showing the result after setting
 `disaggregation-threshold` to 10.
+
+<div class="cell">
+
+</div>
 
 <div class="cell">
 
