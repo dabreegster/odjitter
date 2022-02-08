@@ -119,13 +119,18 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
         // strings
         let string_map: HashMap<String, String> = rec?;
 
-        // How many times will we jitter this one row? This will be 0 if disaggregation_key is 0
-        // for this row.
+        // How many times will we jitter this one row?
         let repeat = if let Some(count) = string_map
             .get(&options.disaggregation_key)
             .and_then(|count| count.parse::<f64>().ok())
         {
-            (count / options.disaggregation_threshold as f64).ceil()
+            // If disaggregation_key is 0 for this row, don't scale the counts, but still preserve
+            // the row (and jitter it just once)
+            if count == 0.0 {
+                1.0
+            } else {
+                (count / options.disaggregation_threshold as f64).ceil()
+            }
         } else {
             bail!(
                 "{} doesn't have a {} column or the value isn't numeric; set disaggregation_key properly",
@@ -141,9 +146,9 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
                 // Never treat the origin/destination key as numeric
                 Value::String(value)
             } else if let Ok(x) = value.parse::<f64>() {
-                // Scale all of the numeric values, unless disaggregation_key for this row is 0
-                let scaled = if repeat == 0.0 { x } else { x / repeat };
-                Value::Number(serde_json::Number::from_f64(scaled).unwrap())
+                // Scale all of the numeric values. Note the unwrap is safe -- we should never wind
+                // up with NaN or infinity
+                Value::Number(serde_json::Number::from_f64(x / repeat).unwrap())
             } else {
                 Value::String(value)
             };
@@ -178,8 +183,7 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
             destination_id,
         )?;
 
-        // When repeat is 0, still preserve the row
-        for _ in 0..(repeat as usize).max(1) {
+        for _ in 0..repeat as usize {
             loop {
                 let o = origin_sampler.sample(rng);
                 let d = destination_sampler.sample(rng);
