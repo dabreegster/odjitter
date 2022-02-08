@@ -176,7 +176,8 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
             destination_id,
         )?;
 
-        for _ in 0..repeat as usize {
+        // When repeat is 0, still preserve the row
+        for _ in 0..(repeat as usize).max(1) {
             loop {
                 let o = origin_sampler.sample(rng);
                 let d = destination_sampler.sample(rng);
