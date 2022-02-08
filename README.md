@@ -81,9 +81,9 @@ are provided in the `data/` folder of this repo:
     file](https://github.com/dabreegster/odjitter/blob/main/data/zones.geojson)
     representing zones that contains values matching the zone IDs in the
     OD data (the field containing zone IDs is specified with
-    `--zone-name-key=InterZone` by default): ::: {.cell}
+    `--zone-name-key=InterZone` by default):
 
-::: ::: {.cell}
+<div class="cell">
 
 ``` bash
 head -6 data/zones.geojson
@@ -100,10 +100,14 @@ head -6 data/zones.geojson
 
 </div>
 
-::: 3. A [.geojson
-file](https://github.com/dabreegster/odjitter/blob/main/data/road_network.geojson)
-representing a transport network from which origin and destination
-points are sampled ::: {.cell}
+</div>
+
+3.  A [.geojson
+    file](https://github.com/dabreegster/odjitter/blob/main/data/road_network.geojson)
+    representing a transport network from which origin and destination
+    points are sampled
+
+<div class="cell">
 
 ``` bash
 head -6 data/road_network.geojson
@@ -120,7 +124,7 @@ head -6 data/road_network.geojson
 
 </div>
 
-:::
+</div>
 
 The `jitter` function requires you to set the maximum number of trips
 for all trips in the jittered result. A value of 1 will create a line
@@ -179,8 +183,6 @@ odjitter --od-csv-path data/od.csv \
 
 </div>
 
-<!-- Tidy up -->
-
 # Outputs
 
 The figure below shows the output of the `jitter` commands above
@@ -195,30 +197,7 @@ the right hand figure showing the result after setting
 
 </div>
 
-<div class="cell">
-
-<div class="cell-output-display">
-
-<img src="output-1-unjittered.png"
-style="width:30.0%" />
-
-</div>
-
-<div class="cell-output-display">
-
-<img src="output-2-threshold-50.png"
-style="width:30.0%" />
-
-</div>
-
-<div class="cell-output-display">
-
-<img src="output-3-threshold-10.png"
-style="width:30.0%" />
-
-</div>
-
-</div>
+![](https://user-images.githubusercontent.com/1825120/153021585-44cc107e-0183-4cc3-b7e7-0f72c4fd2c01.png)
 
 Note: `odjitter` uses a random number generator to sample points, so the
 output will change each time you run it, unless you set the `rng-seed`,
