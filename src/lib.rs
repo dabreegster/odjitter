@@ -12,6 +12,7 @@ use std::io::Write;
 use std::path::Path;
 
 use anyhow::{bail, Result};
+use fs_err::File;
 use geo::algorithm::bounding_rect::BoundingRect;
 use geo::algorithm::contains::Contains;
 use geo::algorithm::haversine_distance::HaversineDistance;
@@ -111,7 +112,7 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
     let mut add_comma = false;
 
     println!("Disaggregating OD data");
-    for rec in csv::Reader::from_path(csv_path)?.deserialize() {
+    for rec in csv::Reader::from_reader(File::open(csv_path)?).deserialize() {
         // It's tempting to deserialize directly into a serde_json::Map<String, Value> and
         // auto-detect strings and numbers. But sadly, some input data has zone names that look
         // numeric, and even contain leading zeros, which'll be lost. So first just grab raw
