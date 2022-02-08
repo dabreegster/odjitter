@@ -11,7 +11,7 @@ use crate::{jitter, load_zones, scrape_points, Options, Subsample};
 #[test]
 fn test_sums_match() {
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
-    let input_sum = sum_trips_input("data/od.csv");
+    let input_sum = sum_trips_input("data/od.csv", "all");
 
     for max_per_od in [1, 10, 100, 1000] {
         let subpoints = scrape_points("data/road_network.geojson").unwrap();
@@ -32,7 +32,7 @@ fn test_sums_match() {
             .parse::<GeoJson>()
             .unwrap();
 
-        let output_sum = sum_trips_output(&output);
+        let output_sum = sum_trips_output(&output, "all");
         let epsilon = 1e-6;
         assert!(
             (input_sum - output_sum).abs() < epsilon,
@@ -46,7 +46,6 @@ fn test_sums_match() {
     }
 }
 
-#[ignore]
 #[test]
 fn test_different_subpoints() {
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
@@ -58,8 +57,7 @@ fn test_different_subpoints() {
         max_per_od: 1,
         subsample_origin: Subsample::RandomPoints,
         subsample_destination: Subsample::UnweightedPoints(destination_subpoints),
-        // TODO od_schools.csv doesn't have this
-        all_key: "all".to_string(),
+        all_key: "walk".to_string(),
         origin_key: "origin".to_string(),
         destination_key: "destination".to_string(),
         min_distance_meters: 1.0,
@@ -80,8 +78,8 @@ fn test_different_subpoints() {
         .unwrap();
 
     // Verify that all destinations match one of the schools
-    if let GeoJson::FeatureCollection(fc) = output {
-        for feature in fc.features {
+    if let GeoJson::FeatureCollection(ref fc) = output {
+        for feature in &fc.features {
             if let Some(geojson::Value::LineString(ls)) =
                 feature.geometry.as_ref().map(|geom| &geom.value)
             {
@@ -99,26 +97,38 @@ fn test_different_subpoints() {
     } else {
         panic!("Output isn't a FeatureCollection: {:?}", output);
     }
+
+    // Also make sure sums match, so rows are preserved properly. This input data has 0 for some
+    // all_key rows. (Ideally this would be a separate test)
+    let input_sum = sum_trips_input("data/od_schools.csv", "walk");
+    let output_sum = sum_trips_output(&output, "walk");
+    let epsilon = 1e-6;
+    assert!(
+        (input_sum - output_sum).abs() < epsilon,
+        "Number of trips in input {} and jittered output {} don't match",
+        input_sum,
+        output_sum,
+    );
 }
 
 // TODO Test zone names that look numeric and contain leading 0's
 
-fn sum_trips_input(csv_path: &str) -> f64 {
+fn sum_trips_input(csv_path: &str, all_key: &str) -> f64 {
     let mut total = 0.0;
     for rec in csv::Reader::from_path(csv_path).unwrap().deserialize() {
         let map: Map<String, Value> = rec.unwrap();
-        if let Value::Number(x) = &map["all"] {
+        if let Value::Number(x) = &map[all_key] {
             total += x.as_f64().unwrap();
         }
     }
     total
 }
 
-fn sum_trips_output(gj: &GeoJson) -> f64 {
+fn sum_trips_output(gj: &GeoJson, all_key: &str) -> f64 {
     let mut total = 0.0;
     if let GeoJson::FeatureCollection(fc) = gj {
         for feature in &fc.features {
-            total += feature.property("all").unwrap().as_f64().unwrap();
+            total += feature.property(all_key).unwrap().as_f64().unwrap();
         }
     }
     total
