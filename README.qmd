@@ -123,7 +123,24 @@ odjitter --od-csv-path data/od_schools.csv \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/schools.geojson \
   --disaggregation-key car \
-  --disaggregation-threshold 10 --output-path output_max10_schools.geojson
+  --disaggregation-threshold 10 \
+  --output-path output_max10_schools.geojson
+```
+
+You can also set weights associated with each origin and destination in the input data.
+The following example weights trips to schools proportional to the values in the 'weight' key for each imaginary data point represented in the `schools.geojson` object:
+
+```{bash}
+./target/debug/odjitter --od-csv-path data/od_schools.csv \
+  --zones-path data/zones.geojson \
+  --origin-key origin \
+  --destination-key destination \
+  --subpoints-origins-path data/road_network.geojson \
+  --subpoints-destinations-path data/schools.geojson \
+  --disaggregation-key car \
+  --disaggregation-threshold 10 \
+  --weight-key-destinations weight \
+  --output-path output_max10_schools_with_weights.geojson
 ```
 
 
@@ -132,7 +149,7 @@ odjitter --od-csv-path data/od_schools.csv \
 For full details on `odjitter`'s arguments run `odjitter --help` which gives the following output:
 
 ```{bash}
-odjitter --help
+./target/debug/odjitter --help
 ```
 
 # References
