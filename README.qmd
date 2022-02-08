@@ -15,7 +15,7 @@ Rscript -e 'rmarkdown::render("README.Rmd")'
 # odjitter
 
 This crate contains an implementation of the 'jittering' technique for pre-processing origin-destination (OD) data.
-Jittering in a data visualisation context refers to the addition of "random noise to the data" to prevent points in graphs from overlapping, as described in by Wickham et al. ([2016](https://ggplot2-book.org/)) and in the documentation page for the function [`geom_jitter()`](https://ggplot2.tidyverse.org/reference/geom_jitter.html).
+Jittering in a [data visualisation context](https://ggplot2-book.org/layers.html?q=noise#position) refers to the addition of random noise to the location of points, preventing them overlapping.
 
 In the context of OD data jittering refers to randomly moving start and end points associated with OD pairs, as described in an under review paper on the subject (Lovelace et al. under review).
 The technique is implemented in the function [`od_jitter()`](https://itsleeds.github.io/od/reference/od_jitter.html) in the [`od`](https://itsleeds.github.io/od/index.html) R package.
@@ -23,9 +23,6 @@ The functionality contained in this repo is an extended and much faster implemen
 
 The crate is still a work in progress: the API may change.
 Issues and pull requests are particularly useful at this stage.
-
-<!-- Todo: add worked example. Will do for GISRUK paper -->
-<!-- An illustration of its functionality is shown below. -->
 
 # Installation
 
