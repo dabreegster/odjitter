@@ -257,7 +257,8 @@ head data/od_schools.csv
 
 </div>
 
-Set the origin, destination, and threshold keys as follows:
+Set the origin, destination, and threshold keys (to car meaning that the
+max n. car trips per OD pair is 10 in this case) as follows:
 
 <div class="cell">
 
@@ -268,7 +269,7 @@ odjitter --od-csv-path data/od_schools.csv \
   --destination-key destination \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/schools.geojson \
-  --disaggregation-key bike \
+  --disaggregation-key car \
   --disaggregation-threshold 10 --output-path output_max10_schools.geojson
 ```
 
