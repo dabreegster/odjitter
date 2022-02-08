@@ -1,3 +1,7 @@
+<!-- Note: do not edit the README.md file directly. -->
+<!-- Edit README.qmd and rebuild with the following command (install quarto first) -->
+<!-- quarto render README.qmd -->
+
 <div class="cell">
 
 </div>

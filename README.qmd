@@ -2,6 +2,11 @@
 format: gfm
 ---
 
+<!-- Note: do not edit the README.md file directly. -->
+<!-- Edit README.qmd and rebuild with the following command (install quarto first) -->
+
+<!-- quarto render README.qmd -->
+
 ```{r eval=FALSE, echo=FALSE}
 # Build the paper:
 Rscript -e 'rmarkdown::render("README.Rmd")'
