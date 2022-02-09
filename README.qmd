@@ -143,6 +143,15 @@ odjitter jitter --od-csv-path data/od_schools.csv \
   --output-path output_max10_schools_with_weights.geojson
 ```
 
+# Full disaggregation
+
+TODO: Describe what this is about. Minimal example:
+
+```{bash}
+odjitter disaggregate --od-csv-path data/od.csv \
+  --zones-path data/zones.geojson \
+  --output-path output_individual.geojson
+```
 
 # Details
 

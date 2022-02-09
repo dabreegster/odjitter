@@ -220,6 +220,110 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
     Ok(())
 }
 
+/// This method transforms aggregate origin/destination pairs into a fully disaggregated form, by
+/// sampling specific points from the zone.
+///
+/// The input is a CSV file, with each row representing trips between an origin and destination,
+/// expressed as a named zone. All numeric columns in the CSV file are interpreted as a number of
+/// trips by different modes (like walking, cycling, etc).
+///
+/// Each input row is repeated some number of times, based on the counts in each mode column. The
+/// output will have a new `mode` column set to that.
+///
+/// The output is written as GeoJSON to the provided writer.
+///
+/// Note this assumes assumes all input is in the WGS84 coordinate system, and uses the Haversine
+/// formula to calculate distances.
+///
+pub fn disaggregate<P: AsRef<Path>, W: Write>(
+    csv_path: P,
+    zones: &HashMap<String, MultiPolygon<f64>>,
+    rng: &mut StdRng,
+    options: Options,
+    mut writer: W,
+) -> Result<()> {
+    let csv_path = csv_path.as_ref();
+
+    let points_per_origin_zone: Option<BTreeMap<String, Vec<WeightedPoint>>> =
+        if let Subsample::WeightedPoints(points) = options.subsample_origin {
+            Some(points_per_polygon(points, zones))
+        } else {
+            None
+        };
+    let points_per_destination_zone: Option<BTreeMap<String, Vec<WeightedPoint>>> =
+        if let Subsample::WeightedPoints(points) = options.subsample_destination {
+            Some(points_per_polygon(points, zones))
+        } else {
+            None
+        };
+
+    // Manually write GeoJSON, so we can write per feature, instead of collecting the whole
+    // FeatureCollection in memory
+    writeln!(writer, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
+    let mut add_comma = false;
+
+    println!("Disaggregating OD data");
+    for rec in csv::Reader::from_reader(File::open(csv_path)?).deserialize() {
+        // It's tempting to deserialize directly into a serde_json::Map<String, Value> and
+        // auto-detect strings and numbers. But sadly, some input data has zone names that look
+        // numeric, and even contain leading zeros, which'll be lost. So first just grab raw
+        // strings
+        let mut string_map: HashMap<String, String> = rec?;
+
+        let origin_id = if let Some(id) = string_map.remove(&options.origin_key) {
+            id
+        } else {
+            bail!(
+                "{} doesn't have a {} column; set origin_key properly",
+                csv_path.display(),
+                options.origin_key
+            );
+        };
+        let destination_id = if let Some(id) = string_map.remove(&options.destination_key) {
+            id
+        } else {
+            bail!(
+                "{} doesn't have a {} column; set destination_key properly",
+                csv_path.display(),
+                options.destination_key
+            );
+        };
+        let origin_sampler =
+            Subsampler::new(&points_per_origin_zone, &zones[&origin_id], &origin_id)?;
+        let destination_sampler = Subsampler::new(
+            &points_per_destination_zone,
+            &zones[&destination_id],
+            &destination_id,
+        )?;
+
+        // Interpret all columns except origin_key and destination_key as numeric, split by mode
+        for (mode, value) in string_map {
+            if let Ok(count) = value.parse::<f64>() {
+                // TODO How should we treat fractional input?
+                for _ in 0..count as usize {
+                    loop {
+                        let o = origin_sampler.sample(rng);
+                        let d = destination_sampler.sample(rng);
+                        if o.haversine_distance(&d) >= options.min_distance_meters {
+                            if add_comma {
+                                writeln!(writer, ",")?;
+                            } else {
+                                add_comma = true;
+                            }
+                            let mut json_map: Map<String, Value> = Map::new();
+                            json_map.insert("mode".to_string(), Value::String(mode.clone()));
+                            serde_json::to_writer(&mut writer, &to_geojson(o, d, json_map))?;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    writeln!(writer, "]}}")?;
+    Ok(())
+}
+
 /// Extract multipolygon zones from a GeoJSON file, using the provided `name_key` as the key in the
 /// resulting map.
 pub fn load_zones(

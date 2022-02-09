@@ -148,7 +148,7 @@ fn main() -> Result<()> {
             )?;
         }
         Action::Disaggregate { .. } => {
-            unimplemented!()
+            odjitter::disaggregate(common.od_csv_path, &zones, &mut rng, options, &mut file)?;
         }
     }
     println!("Wrote {}", common.output_path);
