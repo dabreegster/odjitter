@@ -5,24 +5,19 @@
 # odjitter
 
 This crate contains an implementation of the ‘jittering’ technique for
-pre-processing origin-destination (OD) data. Jittering in a [data
-visualisation
-context](https://ggplot2-book.org/layers.html?q=noise#position) refers
-to the addition of random noise to the location of points, preventing
-them overlapping.
+pre-processing origin-destination (OD) data, plus code for conversion of
+aggregate OD data to disaggregate trip level data, with movement between
+two points represented as geographic lines that can be stored as GeoJSON
+files. The name comes from jittering in a [data visualisation
+context](https://ggplot2-book.org/layers.html?q=noise#position), which
+refers to the addition of random noise to the location of points,
+preventing them overlapping.
 
 In the context of OD data jittering refers to randomly moving start and
 end points associated with OD pairs, as described in an under review
-paper on the subject (Lovelace et al. under review). The technique is
-implemented in the function
-[`od_jitter()`](https://itsleeds.github.io/od/reference/od_jitter.html)
-in the [`od`](https://itsleeds.github.io/od/index.html) R package. The
-functionality contained in this repo is an extended and much faster
-implementation: according to our benchmarks on a large dataset it was
-around 1000 times faster than the R implementation.
-
-The crate is still a work in progress: the API may change. Issues and
-pull requests are particularly useful at this stage.
+paper on the subject (Lovelace et al. under review). The crate is still
+a work in progress: the API may change. Issues and pull requests are
+particularly useful at this stage.
 
 # Installation
 
@@ -47,29 +42,45 @@ odjitter
 
 <div class="cell-output-stdout">
 
-    error: The following required arguments were not provided:
-        --od-csv-path <OD_CSV_PATH>
-        --zones-path <ZONES_PATH>
-        --output-path <OUTPUT_PATH>
-        --disaggregation-threshold <DISAGGREGATION_THRESHOLD>
+    odjitter 0.1.0
+    Dustin Carlino <dabreegster@gmail.com
+    Disaggregate origin/destination data from zones to points
 
     USAGE:
-        odjitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --disaggregation-threshold <DISAGGREGATION_THRESHOLD>
+        odjitter <SUBCOMMAND>
 
-    For more information try --help
+    OPTIONS:
+        -h, --help       Print help information
+        -V, --version    Print version information
+
+    SUBCOMMANDS:
+        disaggregate    Fully disaggregate input desire lines into output representing one trip
+                        each, with a `mode` column
+        help            Print this message or the help of the given subcommand(s)
+        jitter          Import raw data and build an activity model for a region
 
 </div>
 
 </div>
 
-# Usage
+As shown in the output above the `odjitter` command line tools has
+subcommands: `disaggregate` and `jitter`. The main difference between
+these commands is that `jitter` returns OD pairs representing multiple
+trips or fractions of a trip. `disaggregate`, by contrast, returns data
+representing single trips.
 
-To run algorithm you need a minimum of three inputs, examples of which
-are provided in the `data/` folder of this repo:
+# `jitter` OD data
 
-1.  A .csv file containing OD data with two columns containing zone IDs
-    (specified with `--origin-key=geo_code1 --destination-key=geo_code2`
-    by default) and other columns representing trip counts:
+To jitter OD data you need a minimum of three inputs, examples of which
+are provided in the [`data/`
+folder](https://github.com/dabreegster/odjitter/tree/main/data) of this
+repo, the first few lines of which are illustrated below:
+
+1.  A [.csv
+    file](https://github.com/dabreegster/odjitter/blob/main/data/od.csv)
+    containing OD data with two columns containing zone IDs (specified
+    with `--origin-key=geo_code1 --destination-key=geo_code2` by
+    default) and other columns representing trip counts:
 
 | geo_code1 | geo_code2 | all | from_home | train | bus | car_driver | car_passenger | bicycle | foot | other |
 |:----------|:----------|----:|----------:|------:|----:|-----------:|--------------:|--------:|-----:|------:|
@@ -102,10 +113,10 @@ head -6 data/zones.geojson
 
 </div>
 
-3.  A [.geojson
+3.  One or more [.geojson
     file](https://github.com/dabreegster/odjitter/blob/main/data/road_network.geojson)
-    representing a transport network from which origin and destination
-    points are sampled
+    representing geographic entities (e.g. road networks) from which
+    origin and destination points are sampled
 
 <div class="cell">
 
@@ -126,10 +137,11 @@ head -6 data/road_network.geojson
 
 </div>
 
-The `jitter` function requires you to set the maximum number of trips
-for all trips in the jittered result. A value of 1 will create a line
-for every trip in the dataset, a value above the maximum number of trips
-in the ‘all’ column in the OD ata will result in a jittered dataset that
+The `jitter` command requires you to set the maximum number of trips for
+all trips in the jittered result, with the argument
+\`disaggregation-threshold\`\`. A value of 1 will create a line for
+every trip in the dataset, a value above the maximum number of trips in
+the ‘all’ column in the OD data will result in a jittered dataset that
 has the same number of desire lines (the geographic representation of OD
 pairs) as in the input (50 in this case).
 
@@ -139,11 +151,12 @@ command line tool as follows:
 <div class="cell">
 
 ``` bash
-odjitter --od-csv-path data/od.csv \
+odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
-  --disaggregation-threshold 50 --output-path output_max50.geojson
+  --disaggregation-threshold 50 \
+  --output-path output_max50.geojson
 ```
 
 <div class="cell-output-stdout">
@@ -164,11 +177,12 @@ the command below):
 <div class="cell">
 
 ``` bash
-odjitter --od-csv-path data/od.csv \
+odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
-  --disaggregation-threshold 50 --output-path output_max10.geojson
+  --disaggregation-threshold 50 \
+  --output-path output_max10.geojson
 ```
 
 <div class="cell-output-stdout">
@@ -237,7 +251,7 @@ max n. car trips per OD pair is 10 in this case) as follows:
 <div class="cell">
 
 ``` bash
-odjitter --od-csv-path data/od_schools.csv \
+odjitter jitter --od-csv-path data/od_schools.csv \
   --zones-path data/zones.geojson \
   --origin-key origin \
   --destination-key destination \
@@ -268,7 +282,7 @@ point represented in the `schools.geojson` object:
 <div class="cell">
 
 ``` bash
-./target/debug/odjitter --od-csv-path data/od_schools.csv \
+odjitter jitter --od-csv-path data/od_schools.csv \
   --zones-path data/zones.geojson \
   --origin-key origin \
   --destination-key destination \
@@ -292,25 +306,75 @@ point represented in the `schools.geojson` object:
 
 </div>
 
-# Details
+# `disaggregate` OD data
 
-For full details on `odjitter`’s arguments run `odjitter --help` which
-gives the following output:
+Sometimes it’s useful to convert aggregate OD datasets into movement
+data at the trip level, with one record per trip or stage.
+Microsumulation or agent-based modelling in transport simulation
+software such as [A/B Street](https://github.com/a-b-street/abstreet) is
+an example where disaggregate data may be needed. The `disaggregate`
+command does this full disaggregation work, as demonstrated below.
 
 <div class="cell">
 
 ``` bash
-./target/debug/odjitter --help
+odjitter disaggregate --od-csv-path data/od.csv \
+  --zones-path data/zones.geojson \
+  --output-path output_individual.geojson
 ```
 
 <div class="cell-output-stdout">
 
-    odjitter 0.1.0
-    Dustin Carlino <dabreegster@gmail.com
-    Disaggregate origin/destination data from zones to points
+    Scraped 7 zones from data/zones.geojson
+    Disaggregating OD data
+    Wrote output_individual.geojson
+
+</div>
+
+</div>
+
+<div class="cell">
+
+``` bash
+head output_individual.geojson
+```
+
+<div class="cell-output-stdout">
+
+    {"type":"FeatureCollection", "features":[
+    {"geometry":{"coordinates":[[-3.2135610613015526,55.93421097862768],[-3.212232711999157,55.93332165403505]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2146097561854017,55.93170417067243],[-3.207398234215145,55.93226483238321]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2092352469528884,55.933414631097314],[-3.2232443215658635,55.92984479481026]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.215268387637175,55.93346370497761],[-3.2173655585178675,55.9304200482236]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.207921236104001,55.932725149342815],[-3.204781939847086,55.93615884155918]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2201663419808852,55.93491873446773],[-3.219780579470866,55.93501173548011]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2149204733209626,55.936069295852164],[-3.220548578954645,55.933477325246955]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2175899526711524,55.93217765442912],[-3.2194225271063255,55.92798121836583]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2040507101538713,55.93093756507587],[-3.2260899147288638,55.92866578865467]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+
+</div>
+
+</div>
+
+# Details
+
+For full details on the arguments of each of `odjitter`’s subcommands
+can be viewed with the `--help` flag:
+
+<div class="cell">
+
+``` bash
+odjitter jitter --help
+odjitter disaggregate --help
+```
+
+<div class="cell-output-stdout">
+
+    odjitter-jitter 
+    Import raw data and build an activity model for a region
 
     USAGE:
-        odjitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --disaggregation-threshold <DISAGGREGATION_THRESHOLD>
+        odjitter jitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --disaggregation-threshold <DISAGGREGATION_THRESHOLD>
 
     OPTIONS:
             --destination-key <DESTINATION_KEY>
@@ -330,7 +394,8 @@ gives the following output:
                 Print help information
 
             --min-distance-meters <MIN_DISTANCE_METERS>
-                Guarantee that jittered points are at least this distance apart [default: 1.0]
+                Guarantee that jittered origin and destination points are at least this distance apart
+                [default: 1.0]
 
             --od-csv-path <OD_CSV_PATH>
                 The path to a CSV file with aggregated origin/destination data
@@ -340,7 +405,7 @@ gives the following output:
                 geo_code1]
 
             --output-path <OUTPUT_PATH>
-                The path to a GeoJSON file where the disaggregated output will be written
+                The path to a GeoJSON file where the output will be written
 
             --rng-seed <RNG_SEED>
                 By default, the output will be different every time the tool is run, based on a
@@ -355,8 +420,60 @@ gives the following output:
                 The path to a GeoJSON file to use for sampling subpoints for origin zones. If this isn't
                 specified, random points within each zone will be used instead
 
-        -V, --version
-                Print version information
+            --weight-key-destinations <WEIGHT_KEY_DESTINATIONS>
+                If specified, this column will be used to more frequently choose subpoints in
+                `subpoints_destinations_path` with a higher weight value. Otherwise all subpoints will
+                be equally likely to be chosen
+
+            --weight-key-origins <WEIGHT_KEY_ORIGINS>
+                If specified, this column will be used to more frequently choose subpoints in
+                `subpoints_origins_path` with a higher weight value. Otherwise all subpoints will be
+                equally likely to be chosen
+
+            --zone-name-key <ZONE_NAME_KEY>
+                In the zones GeoJSON file, which property is the name of a zone [default: InterZone]
+
+            --zones-path <ZONES_PATH>
+                The path to a GeoJSON file with named zones
+    odjitter-disaggregate 
+    Fully disaggregate input desire lines into output representing one trip each, with a `mode` column
+
+    USAGE:
+        odjitter disaggregate [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH>
+
+    OPTIONS:
+            --destination-key <DESTINATION_KEY>
+                Which column in the OD row specifies the zone where trips ends? [default: geo_code2]
+
+        -h, --help
+                Print help information
+
+            --min-distance-meters <MIN_DISTANCE_METERS>
+                Guarantee that jittered origin and destination points are at least this distance apart
+                [default: 1.0]
+
+            --od-csv-path <OD_CSV_PATH>
+                The path to a CSV file with aggregated origin/destination data
+
+            --origin-key <ORIGIN_KEY>
+                Which column in the OD row specifies the zone where trips originate? [default:
+                geo_code1]
+
+            --output-path <OUTPUT_PATH>
+                The path to a GeoJSON file where the output will be written
+
+            --rng-seed <RNG_SEED>
+                By default, the output will be different every time the tool is run, based on a
+                different random number generator seed. Specify this to get deterministic behavior,
+                given the same input
+
+            --subpoints-destinations-path <SUBPOINTS_DESTINATIONS_PATH>
+                The path to a GeoJSON file to use for sampling subpoints for destination zones. If this
+                isn't specified, random points within each zone will be used instead
+
+            --subpoints-origins-path <SUBPOINTS_ORIGINS_PATH>
+                The path to a GeoJSON file to use for sampling subpoints for origin zones. If this isn't
+                specified, random points within each zone will be used instead
 
             --weight-key-destinations <WEIGHT_KEY_DESTINATIONS>
                 If specified, this column will be used to more frequently choose subpoints in
@@ -377,6 +494,15 @@ gives the following output:
 </div>
 
 </div>
+
+# Similar work
+
+The technique is implemented in the function
+[`od_jitter()`](https://itsleeds.github.io/od/reference/od_jitter.html)
+from the R package [`od`](https://itsleeds.github.io/od/index.html). The
+functionality contained in this repo is an extended and much faster
+implementation: according to our benchmarks on a large dataset it was
+around 1000 times faster than the R implementation.
 
 # References
 

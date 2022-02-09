@@ -35,7 +35,7 @@ As shown in the output above the `odjitter` command line tools has subcommands: 
 The main difference between these commands is that `jitter` returns OD pairs representing multiple trips or fractions of a trip.
 `disaggregate`, by contrast, returns data representing single trips.
 
-# Jittering
+# `jitter` OD data
 
 To jitter OD data you need a minimum of three inputs, examples of which are provided in the [`data/` folder](https://github.com/dabreegster/odjitter/tree/main/data) of this repo, the first few lines of which are illustrated below:
 
@@ -54,14 +54,14 @@ To jitter OD data you need a minimum of three inputs, examples of which are prov
 head -6 data/zones.geojson
 ```
 
-3. A [.geojson file](https://github.com/dabreegster/odjitter/blob/main/data/road_network.geojson) representing a transport network from which origin and destination points are sampled
+3. One or more [.geojson file](https://github.com/dabreegster/odjitter/blob/main/data/road_network.geojson) representing geographic entities (e.g. road networks) from which origin and destination points are sampled
 
 ```{bash}
 head -6 data/road_network.geojson
 ```
 
-The `jitter` function requires you to set the maximum number of trips for all trips in the jittered result.
-A value of 1 will create a line for every trip in the dataset, a value above the maximum number of trips in the 'all' column in the OD ata will result in a jittered dataset that has the same number of desire lines (the geographic representation of OD pairs) as in the input (50 in this case).
+The `jitter` command requires you to set the maximum number of trips for all trips in the jittered result, with the argument `disaggregation-threshold``.
+A value of 1 will create a line for every trip in the dataset, a value above the maximum number of trips in the 'all' column in the OD data will result in a jittered dataset that has the same number of desire lines (the geographic representation of OD pairs) as in the input (50 in this case).
 
 With reference to the test data in this repo, you can run the `jitter` command line tool as follows:
 
@@ -70,7 +70,8 @@ odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
-  --disaggregation-threshold 50 --output-path output_max50.geojson
+  --disaggregation-threshold 50 \
+  --output-path output_max50.geojson
 ```
 
 Try running it with a different `disaggregation-threshold` value (10 in the command below):
@@ -80,7 +81,8 @@ odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
-  --disaggregation-threshold 50 --output-path output_max10.geojson
+  --disaggregation-threshold 50 \
+  --output-path output_max10.geojson
 ```
 
 # Outputs
@@ -144,9 +146,11 @@ odjitter jitter --od-csv-path data/od_schools.csv \
   --output-path output_max10_schools_with_weights.geojson
 ```
 
-# Full disaggregation
+# `disaggregate` OD data
 
-TODO: Describe what this is about. Minimal example:
+Sometimes it's useful to convert aggregate OD datasets into movement data at the trip level, with one record per trip or stage.
+Microsumulation or agent-based modelling in transport simulation software such as [A/B Street](https://github.com/a-b-street/abstreet) is an example where disaggregate data may be needed.
+The `disaggregate` command does this full disaggregation work, as demonstrated below.
 
 ```{bash}
 odjitter disaggregate --od-csv-path data/od.csv \
@@ -154,12 +158,18 @@ odjitter disaggregate --od-csv-path data/od.csv \
   --output-path output_individual.geojson
 ```
 
+```{bash}
+head output_individual.geojson
+```
+
+
 # Details
 
-For full details on `odjitter`'s arguments run `odjitter --help` which gives the following output:
+For full details on the arguments of each of `odjitter`'s subcommands can be viewed with the `--help` flag:
 
 ```{bash}
-odjitter --help
+odjitter jitter --help
+odjitter disaggregate --help
 ```
 
 # Similar work
