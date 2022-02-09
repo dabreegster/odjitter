@@ -6,7 +6,7 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 use serde_json::{Map, Value};
 
-use crate::{jitter, load_zones, scrape_points, Options, Subsample};
+use crate::{disaggregate, jitter, load_zones, scrape_points, Options, Subsample};
 
 #[test]
 fn test_sums_match() {
@@ -124,6 +124,51 @@ fn test_different_subpoints() {
             (input_sum - output_sum).abs() < epsilon,
             "Number of {} trips in input {} and jittered output {} don't match",
             column,
+            input_sum,
+            output_sum,
+        );
+    }
+}
+
+#[test]
+fn test_disaggregate() {
+    let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
+    let options = Options {
+        subsample_origin: Subsample::RandomPoints,
+        subsample_destination: Subsample::RandomPoints,
+        origin_key: "geo_code1".to_string(),
+        destination_key: "geo_code2".to_string(),
+        min_distance_meters: 1.0,
+    };
+    let mut rng = StdRng::seed_from_u64(42);
+    let mut raw_output = Vec::new();
+    disaggregate("data/od.csv", &zones, &mut rng, options, &mut raw_output).unwrap();
+    let output = String::from_utf8(raw_output)
+        .unwrap()
+        .parse::<GeoJson>()
+        .unwrap();
+
+    // Note "all" has no special meaning to the disaggregate call. The user should probably remove
+    // it from the input or ignore it in the output.
+    let input_sums = sum_trips_input("data/od.csv", &["all", "car_driver", "foot"]);
+    let mut sums_per_mode: HashMap<String, usize> = HashMap::new();
+    if let GeoJson::FeatureCollection(ref fc) = output {
+        for feature in &fc.features {
+            let mode = feature
+                .property("mode")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string();
+            *sums_per_mode.entry(mode).or_insert(0) += 1;
+        }
+    }
+    for (mode, input_sum) in input_sums {
+        let output_sum = sums_per_mode[&mode];
+        assert!(
+            input_sum as usize == output_sum,
+            "Number of {} trips in input {} and disaggregated output {} don't match",
+            mode,
             input_sum,
             output_sum,
         );
