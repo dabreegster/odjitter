@@ -7,6 +7,38 @@ use rand::SeedableRng;
 #[derive(Parser)]
 #[clap(about, version, author)]
 struct Args {
+    #[clap(subcommand)]
+    action: Action,
+}
+
+#[derive(clap::Subcommand)]
+enum Action {
+    /// Import raw data and build an activity model for a region
+    Jitter {
+        #[clap(flatten)]
+        common: CommonArgs,
+
+        /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
+        /// contains less than this, it will appear in the output without transformation. Otherwise,
+        /// the input row is repeated until the sum matches the original value, but each output row
+        /// obeys this maximum.
+        #[clap(long)]
+        disaggregation_threshold: usize,
+
+        /// Which column in the OD row specifies the total number of trips to disaggregate?
+        #[clap(long, default_value = "all")]
+        disaggregation_key: String,
+    },
+    /// Fully disaggregate input desire lines into output representing one trip each, with a `mode`
+    /// column.
+    Disaggregate {
+        #[clap(flatten)]
+        common: CommonArgs,
+    },
+}
+
+#[derive(Clone, Parser)]
+struct CommonArgs {
     /// The path to a CSV file with aggregated origin/destination data
     #[clap(long)]
     od_csv_path: String,
@@ -15,7 +47,7 @@ struct Args {
     #[clap(long)]
     zones_path: String,
 
-    /// The path to a GeoJSON file where the disaggregated output will be written
+    /// The path to a GeoJSON file where the output will be written
     #[clap(long)]
     output_path: String,
 
@@ -39,19 +71,9 @@ struct Args {
     #[clap(long)]
     weight_key_destinations: Option<String>,
 
-    /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
-    /// contains less than this, it will appear in the output without transformation. Otherwise,
-    /// the input row is repeated until the sum matches the original value, but each output row
-    /// obeys this maximum.
-    #[clap(long)]
-    disaggregation_threshold: usize,
-
     /// In the zones GeoJSON file, which property is the name of a zone
     #[clap(long, default_value = "InterZone")]
     zone_name_key: String,
-    /// Which column in the OD row specifies the total number of trips to disaggregate?
-    #[clap(long, default_value = "all")]
-    disaggregation_key: String,
     /// Which column in the OD row specifies the zone where trips originate?
     #[clap(long, default_value = "geo_code1")]
     origin_key: String,
@@ -63,26 +85,31 @@ struct Args {
     /// input.
     #[clap(long)]
     rng_seed: Option<u64>,
-    /// Guarantee that jittered points are at least this distance apart.
+    /// Guarantee that jittered origin and destination points are at least this distance apart.
     #[clap(long, default_value = "1.0")]
     min_distance_meters: f64,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
+    // TODO Remove the clone
+    let common = match args.action {
+        Action::Jitter { ref common, .. } => common.clone(),
+        Action::Disaggregate { ref common, .. } => common.clone(),
+    };
 
-    let zones = odjitter::load_zones(&args.zones_path, &args.zone_name_key)?;
-    println!("Scraped {} zones from {}", zones.len(), args.zones_path);
+    let zones = odjitter::load_zones(&common.zones_path, &common.zone_name_key)?;
+    println!("Scraped {} zones from {}", zones.len(), common.zones_path);
 
-    let subsample_origin = if let Some(ref path) = args.subpoints_origins_path {
-        let subpoints = odjitter::scrape_points(path, args.weight_key_origins)?;
+    let subsample_origin = if let Some(ref path) = common.subpoints_origins_path {
+        let subpoints = odjitter::scrape_points(path, common.weight_key_origins)?;
         println!("Scraped {} subpoints from {}", subpoints.len(), path);
         odjitter::Subsample::WeightedPoints(subpoints)
     } else {
         odjitter::Subsample::RandomPoints
     };
-    let subsample_destination = if let Some(ref path) = args.subpoints_destinations_path {
-        let subpoints = odjitter::scrape_points(path, args.weight_key_destinations)?;
+    let subsample_destination = if let Some(ref path) = common.subpoints_destinations_path {
+        let subpoints = odjitter::scrape_points(path, common.weight_key_destinations)?;
         println!("Scraped {} subpoints from {}", subpoints.len(), path);
         odjitter::Subsample::WeightedPoints(subpoints)
     } else {
@@ -90,23 +117,41 @@ fn main() -> Result<()> {
     };
 
     let options = odjitter::Options {
-        disaggregation_threshold: args.disaggregation_threshold,
         subsample_origin,
         subsample_destination,
-        disaggregation_key: args.disaggregation_key,
-        origin_key: args.origin_key,
-        destination_key: args.destination_key,
-        min_distance_meters: args.min_distance_meters,
+        origin_key: common.origin_key,
+        destination_key: common.destination_key,
+        min_distance_meters: common.min_distance_meters,
     };
-    let mut rng = if let Some(seed) = args.rng_seed {
+    let mut rng = if let Some(seed) = common.rng_seed {
         StdRng::seed_from_u64(seed)
     } else {
         StdRng::from_entropy()
     };
 
-    let mut file = std::io::BufWriter::new(File::create(&args.output_path)?);
-    odjitter::jitter(args.od_csv_path, &zones, &mut rng, options, &mut file)?;
-    println!("Wrote {}", args.output_path);
+    let mut file = std::io::BufWriter::new(File::create(&common.output_path)?);
+
+    match args.action {
+        Action::Jitter {
+            disaggregation_threshold,
+            disaggregation_key,
+            ..
+        } => {
+            odjitter::jitter(
+                common.od_csv_path,
+                &zones,
+                disaggregation_threshold,
+                disaggregation_key,
+                &mut rng,
+                options,
+                &mut file,
+            )?;
+        }
+        Action::Disaggregate { .. } => {
+            unimplemented!()
+        }
+    }
+    println!("Wrote {}", common.output_path);
 
     Ok(())
 }
