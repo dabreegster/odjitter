@@ -16,17 +16,25 @@ fn test_sums_match() {
     for disaggregation_threshold in [1, 10, 100, 1000] {
         let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
         let options = Options {
-            disaggregation_threshold,
             subsample_origin: Subsample::WeightedPoints(subpoints.clone()),
             subsample_destination: Subsample::WeightedPoints(subpoints),
-            disaggregation_key: "all".to_string(),
             origin_key: "geo_code1".to_string(),
             destination_key: "geo_code2".to_string(),
             min_distance_meters: 1.0,
         };
         let mut rng = StdRng::seed_from_u64(42);
         let mut raw_output = Vec::new();
-        jitter("data/od.csv", &zones, &mut rng, options, &mut raw_output).unwrap();
+        let disaggregation_key = "all".to_string();
+        jitter(
+            "data/od.csv",
+            &zones,
+            disaggregation_threshold,
+            disaggregation_key,
+            &mut rng,
+            options,
+            &mut raw_output,
+        )
+        .unwrap();
         let output = String::from_utf8(raw_output)
             .unwrap()
             .parse::<GeoJson>()
@@ -60,19 +68,21 @@ fn test_different_subpoints() {
         .collect();
 
     let options = Options {
-        disaggregation_threshold: 1,
         subsample_origin: Subsample::RandomPoints,
         subsample_destination: Subsample::WeightedPoints(destination_subpoints),
-        disaggregation_key: "walk".to_string(),
         origin_key: "origin".to_string(),
         destination_key: "destination".to_string(),
         min_distance_meters: 1.0,
     };
+    let disaggregation_threshold = 1;
+    let disaggregation_key = "walk".to_string();
     let mut rng = StdRng::seed_from_u64(42);
     let mut raw_output = Vec::new();
     jitter(
         "data/od_schools.csv",
         &zones,
+        disaggregation_threshold,
+        disaggregation_key,
         &mut rng,
         options,
         &mut raw_output,

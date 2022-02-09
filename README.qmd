@@ -65,7 +65,7 @@ A value of 1 will create a line for every trip in the dataset, a value above the
 With reference to the test data in this repo, you can run the `jitter` command line tool as follows:
 
 ```{bash}
-odjitter --od-csv-path data/od.csv \
+odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
@@ -75,7 +75,7 @@ odjitter --od-csv-path data/od.csv \
 Try running it with a different `disaggregation-threshold` value (10 in the command below):
 
 ```{bash}
-odjitter --od-csv-path data/od.csv \
+odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
@@ -116,7 +116,7 @@ head data/od_schools.csv
 Set the origin, destination, and threshold keys (to car meaning that the max n. car trips per OD pair is 10 in this case) as follows:
 
 ```{bash}
-odjitter --od-csv-path data/od_schools.csv \
+odjitter jitter --od-csv-path data/od_schools.csv \
   --zones-path data/zones.geojson \
   --origin-key origin \
   --destination-key destination \
@@ -131,7 +131,7 @@ You can also set weights associated with each origin and destination in the inpu
 The following example weights trips to schools proportional to the values in the 'weight' key for each imaginary data point represented in the `schools.geojson` object:
 
 ```{bash}
-./target/debug/odjitter --od-csv-path data/od_schools.csv \
+odjitter jitter --od-csv-path data/od_schools.csv \
   --zones-path data/zones.geojson \
   --origin-key origin \
   --destination-key destination \
@@ -149,7 +149,7 @@ The following example weights trips to schools proportional to the values in the
 For full details on `odjitter`'s arguments run `odjitter --help` which gives the following output:
 
 ```{bash}
-./target/debug/odjitter --help
+odjitter --help
 ```
 
 # References

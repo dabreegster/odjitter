@@ -32,16 +32,6 @@ pub use self::scrape::scrape_points;
 // TODO Setup github builds
 
 pub struct Options {
-    /// What's the maximum number of trips per output OD row that's allowed? If an input OD row
-    /// contains less than this, it will appear in the output without transformation. Otherwise,
-    /// the input row is repeated until the sum matches the original value, but each output row
-    /// obeys this maximum.
-    ///
-    /// TODO Don't allow this to be 0
-    /// TODO If this is 1, it'd be more natural to set one "mode" column
-    pub disaggregation_threshold: usize,
-    /// Which column in the OD row specifies the total number of trips to disaggregate?
-    pub disaggregation_key: String,
     /// How to pick points from origin zones
     pub subsample_origin: Subsample,
     /// How to pick points from destination zones
@@ -99,13 +89,25 @@ impl RTreeObject for WeightedPoint {
 ///
 /// Note this assumes assumes all input is in the WGS84 coordinate system, and uses the Haversine
 /// formula to calculate distances.
+///
+/// # Arguments
+///
+/// * `disaggregation_threshold` - What's the maximum number of trips per output OD row that's
+///   allowed? If an input OD row contains less than this, it will appear in the output without
+///   transformation. Otherwise, the input row is repeated until the sum matches the original value,
+///   but each output row obeys this maximum.
+/// * `disaggregation_key` - Which column in the OD row specifies the total number of trips to
+///   disaggregate?
 pub fn jitter<P: AsRef<Path>, W: Write>(
     csv_path: P,
     zones: &HashMap<String, MultiPolygon<f64>>,
+    disaggregation_threshold: usize,
+    disaggregation_key: String,
     rng: &mut StdRng,
     options: Options,
     mut writer: W,
 ) -> Result<()> {
+    // TODO Don't allow disaggregation_threshold to be 0
     let csv_path = csv_path.as_ref();
 
     let points_per_origin_zone: Option<BTreeMap<String, Vec<WeightedPoint>>> =
@@ -136,7 +138,7 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
 
         // How many times will we jitter this one row?
         let repeat = if let Some(count) = string_map
-            .get(&options.disaggregation_key)
+            .get(&disaggregation_key)
             .and_then(|count| count.parse::<f64>().ok())
         {
             // If disaggregation_key is 0 for this row, don't scale the counts, but still preserve
@@ -144,13 +146,13 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
             if count == 0.0 {
                 1.0
             } else {
-                (count / options.disaggregation_threshold as f64).ceil()
+                (count / disaggregation_threshold as f64).ceil()
             }
         } else {
             bail!(
                 "{} doesn't have a {} column or the value isn't numeric; set disaggregation_key properly",
                 csv_path.display(),
-                options.disaggregation_key
+                disaggregation_key
             );
         };
 
