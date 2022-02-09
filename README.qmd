@@ -31,11 +31,15 @@ If it prints the following message congratulations, it works 🎉
 odjitter
 ```
 
-# Usage
+As shown in the output above the `odjitter` command line tools has subcommands: `disaggregate` and `jitter`.
+The main difference between these commands is that `jitter` returns OD pairs representing multiple trips or fractions of a trip.
+`disaggregate`, by contrast, returns data representing single trips.
 
-To run algorithm you need a minimum of three inputs, examples of which are provided in the `data/` folder of this repo:
+# Jittering
 
-1. A .csv file containing OD data with two columns containing zone IDs (specified with  `--origin-key=geo_code1 --destination-key=geo_code2` by default) and other columns representing trip counts:
+To jitter OD data you need a minimum of three inputs, examples of which are provided in the [`data/` folder](https://github.com/dabreegster/odjitter/tree/main/data) of this repo, the first few lines of which are illustrated below:
+
+1. A [.csv file](https://github.com/dabreegster/odjitter/blob/main/data/od.csv) containing OD data with two columns containing zone IDs (specified with  `--origin-key=geo_code1 --destination-key=geo_code2` by default) and other columns representing trip counts:
 
 
 |geo_code1 |geo_code2 | all| from_home| train| bus| car_driver| car_passenger| bicycle| foot| other|
