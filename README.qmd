@@ -9,13 +9,10 @@ Rscript -e 'rmarkdown::render("README.Rmd")'
 
 # odjitter
 
-This crate contains an implementation of the 'jittering' technique for pre-processing origin-destination (OD) data.
-Jittering in a [data visualisation context](https://ggplot2-book.org/layers.html?q=noise#position) refers to the addition of random noise to the location of points, preventing them overlapping.
+This crate contains an implementation of the 'jittering' technique for pre-processing origin-destination (OD) data, plus code for conversion of aggregate OD data to disaggregate trip level data, with movement between two points represented as geographic lines that can be stored as GeoJSON files.
+The name comes from jittering in a [data visualisation context](https://ggplot2-book.org/layers.html?q=noise#position), which refers to the addition of random noise to the location of points, preventing them overlapping.
 
 In the context of OD data jittering refers to randomly moving start and end points associated with OD pairs, as described in an under review paper on the subject (Lovelace et al. under review).
-The technique is implemented in the function [`od_jitter()`](https://itsleeds.github.io/od/reference/od_jitter.html) in the [`od`](https://itsleeds.github.io/od/index.html) R package.
-The functionality contained in this repo is an extended and much faster implementation: according to our benchmarks on a large dataset it was around 1000 times faster than the R implementation.
-
 The crate is still a work in progress: the API may change.
 Issues and pull requests are particularly useful at this stage.
 
@@ -160,6 +157,12 @@ For full details on `odjitter`'s arguments run `odjitter --help` which gives the
 ```{bash}
 odjitter --help
 ```
+
+# Similar work
+
+The technique is implemented in the function [`od_jitter()`](https://itsleeds.github.io/od/reference/od_jitter.html) from the R package [`od`](https://itsleeds.github.io/od/index.html).
+The functionality contained in this repo is an extended and much faster implementation: according to our benchmarks on a large dataset it was around 1000 times faster than the R implementation.
+
 
 # References
 
