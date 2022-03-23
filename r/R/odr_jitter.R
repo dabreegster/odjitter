@@ -28,13 +28,13 @@
 #' od = readr::read_csv("https://github.com/dabreegster/odjitter/raw/main/data/od.csv")
 #' zones = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/zones.geojson")
 #' road_network = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/road_network.geojson")
-#' od_jittered = odr_jitter(
+#' od_jittered = jitter(
 #'   od,
 #'   zones,
 #'   subpoints = road_network,
 #'   disaggregation_threshold = 50
 #' )
-odr_jitter = function(
+jitter = function(
     od,
     zones,
     subpoints = NULL,

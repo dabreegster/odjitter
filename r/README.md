@@ -38,7 +38,7 @@ od_unjittered = od::od_to_sf(od, zones)
 #> 0 destinations with no match in zone ids
 #>  points not in od data removed.
 set.seed(42) # for reproducibility
-od_jittered = odr_jitter(od, zones, subpoints = road_network)
+od_jittered = jitter(od, zones, subpoints = road_network)
 nrow(od_unjittered)
 #> [1] 49
 nrow(od_jittered)

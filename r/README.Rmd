@@ -37,7 +37,7 @@ names(zones)[1] = "geo_code"
 road_network = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/road_network.geojson")
 od_unjittered = od::od_to_sf(od, zones)
 set.seed(42) # for reproducibility
-od_jittered = odr_jitter(od, zones, subpoints = road_network)
+od_jittered = jitter(od, zones, subpoints = road_network)
 nrow(od_unjittered)
 nrow(od_jittered)
 plot(od_unjittered)
