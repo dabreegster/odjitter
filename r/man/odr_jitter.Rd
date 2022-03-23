@@ -65,6 +65,9 @@ odr_jitter(
 \item{subpoints_destinations_path}{Location of subpoints file (usually irrelevant)}
 
 \item{zones_path}{Path to zones (usually irrelevant)}
+
+\item{data_dir}{The directory where intermediate
+data files will be saved. \code{tempdir()} by default.}
 }
 \value{
 

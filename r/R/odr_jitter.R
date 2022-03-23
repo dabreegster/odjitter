@@ -19,6 +19,8 @@
 #' @param subpoints_destinations_path Location of subpoints file (usually irrelevant)
 #' @param subpoints_origins_path Location of subpoints file (usually irrelevant)
 #' @param zones_path Path to zones (usually irrelevant)
+#' @param data_dir The directory where intermediate
+#'   data files will be saved. `tempdir()` by default.
 #' @return
 #' @export
 #'
