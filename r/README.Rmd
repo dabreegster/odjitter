@@ -1,0 +1,75 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# odr
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of {odrust} is to provide an R interface to the [odjitter](https://github.com/dabreegster/odjitter) Rust crate for processing origin-destination data.
+
+```{r, eval=FALSE}
+remotes::install_github("atumworld/odrust")
+```
+
+```{r}
+library(odrust)
+```
+
+
+## R interface to `odjitter` Rust crate via system commands
+
+
+```{r jitter, out.width="50%", fig.show='hold'}
+od = readr::read_csv("https://github.com/dabreegster/odjitter/raw/main/data/od.csv")
+zones = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/zones.geojson")
+names(zones)[1] = "geo_code"
+road_network = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/road_network.geojson")
+od_unjittered = od::od_to_sf(od, zones)
+set.seed(42) # for reproducibility
+od_jittered = odr_jitter(od, zones, subpoints = road_network)
+nrow(od_unjittered)
+nrow(od_jittered)
+plot(od_unjittered)
+plot(od_jittered)
+```
+
+## R interface to Rust via rextendr (not currently working)
+
+The development of the package was done using the development version of the `rextendr` package.
+
+```{r, eval=FALSE}
+remotes::install_github("extendr/rextendr")
+```
+
+The package template was created as follows:
+
+```{r, eval=FALSE}
+usethis::use_description()
+rextendr::use_extendr()
+```
+
+The odjitter Rust crate ported into the src/rust folder.
+
+```{r, eval=FALSE, echo=FALSE}
+list.files("src/rust/")
+file.edit("~/orgs/atumWorld/odjitter/src/lib.rs")
+file.edit("~/orgs/atumWorld/odjitter/Cargo.toml")
+file.edit("src/rust/Cargo.toml")
+```
+
+
+```{bash, echo=FALSE, eval=FALSE}
+cp -Rv ~/orgs/atumWorld/odjitter/src/scrape.rs src/rust/src/
+```
+
