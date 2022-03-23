@@ -6,16 +6,16 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of {odrust} is to provide an R interface to the
+The goal of {odjitter} is to provide an R interface to the
 [odjitter](https://github.com/dabreegster/odjitter) Rust crate for
 processing origin-destination data.
 
 ``` r
-remotes::install_github("atumworld/odrust")
+remotes::install_github("atumworld/odjitter")
 ```
 
 ``` r
-library(odrust)
+library(odjitter)
 ```
 
 ## R interface to `odjitter` Rust crate via system commands

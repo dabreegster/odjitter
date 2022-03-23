@@ -16,14 +16,14 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of {odrust} is to provide an R interface to the [odjitter](https://github.com/dabreegster/odjitter) Rust crate for processing origin-destination data.
+The goal of {odjitter} is to provide an R interface to the [odjitter](https://github.com/dabreegster/odjitter) Rust crate for processing origin-destination data.
 
 ```{r, eval=FALSE}
-remotes::install_github("atumworld/odrust")
+remotes::install_github("atumworld/odjitter")
 ```
 
 ```{r}
-library(odrust)
+library(odjitter)
 ```
 
 
