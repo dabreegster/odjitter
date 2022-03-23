@@ -11,24 +11,24 @@ knitr::opts_chunk$set(
 )
 ```
 
-# odr
+# odjitter R package
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of {odjitter} is to provide an R interface to the [odjitter](https://github.com/dabreegster/odjitter) Rust crate for processing origin-destination data.
+The goal of this {odjitter} R package is to provide an R interface to the [odjitter](https://github.com/dabreegster/odjitter) Rust crate for processing origin-destination data.
+
+Install the development version as follows
 
 ```{r, eval=FALSE}
-remotes::install_github("atumworld/odjitter")
+remotes::install_github("dabreegster/odjitter", subdir = "r", ref = "rpkg")
 ```
+
+## R interface to `odjitter` Rust crate via system commands
 
 ```{r}
 library(odjitter)
 ```
-
-
-## R interface to `odjitter` Rust crate via system commands
-
 
 ```{r jitter, out.width="50%", fig.show='hold'}
 od = readr::read_csv("https://github.com/dabreegster/odjitter/raw/main/data/od.csv")

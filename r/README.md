@@ -1,29 +1,31 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# odr
+# odjitter R package
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of {odjitter} is to provide an R interface to the
-[odjitter](https://github.com/dabreegster/odjitter) Rust crate for
+The goal of this {odjitter} R package is to provide an R interface to
+the [odjitter](https://github.com/dabreegster/odjitter) Rust crate for
 processing origin-destination data.
 
-``` r
-remotes::install_github("atumworld/odjitter")
-```
+Install the development version as follows
 
 ``` r
-library(odjitter)
+remotes::install_github("dabreegster/odjitter", subdir = "r", ref = "rpkg")
 ```
 
 ## R interface to `odjitter` Rust crate via system commands
 
 ``` r
+library(odjitter)
+```
+
+``` r
 od = readr::read_csv("https://github.com/dabreegster/odjitter/raw/main/data/od.csv")
 #> Rows: 49 Columns: 11
-#> ── Column specification ────────────────────────────────────────────────────────
+#> ── Column specification ───────────────────────────────────────────────────────────
 #> Delimiter: ","
 #> chr (2): geo_code1, geo_code2
 #> dbl (9): all, from_home, train, bus, car_driver, car_passenger, bicycle, foo...
