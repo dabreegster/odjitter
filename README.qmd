@@ -9,7 +9,10 @@ Rscript -e 'rmarkdown::render("README.Rmd")'
 
 # odjitter
 
-This crate contains an implementation of the 'jittering' technique for pre-processing origin-destination (OD) data, plus code for conversion of aggregate OD data to disaggregate trip level data, with movement between two points represented as geographic lines that can be stored as GeoJSON files.
+This repo contains the `odjitter` crate that implements a 'jittering' technique for pre-processing origin-destination (OD) data, and interfaces to R (see the [r](r/) subdirectory) and possibly other languages in the future.
+
+Jittering takes aggregate OD data plus zones and geographic datasets representing trip start and end points.
+The output is geographic lines representing movement between the zones that can be stored as GeoJSON files.
 The name comes from jittering in a [data visualisation context](https://ggplot2-book.org/layers.html?q=noise#position), which refers to the addition of random noise to the location of points, preventing them overlapping.
 
 In the context of OD data jittering refers to randomly moving start and end points associated with OD pairs, as described in an under review paper on the subject (Lovelace et al. under review).
@@ -160,6 +163,7 @@ odjitter disaggregate --od-csv-path data/od.csv \
 
 ```{bash}
 head output_individual.geojson
+rm output_individual.geojson
 ```
 
 
