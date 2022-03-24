@@ -4,10 +4,14 @@
 
 # odjitter
 
-This crate contains an implementation of the ‘jittering’ technique for
-pre-processing origin-destination (OD) data, plus code for conversion of
-aggregate OD data to disaggregate trip level data, with movement between
-two points represented as geographic lines that can be stored as GeoJSON
+This repo contains the `odjitter` crate that implements a ‘jittering’
+technique for pre-processing origin-destination (OD) data, and
+interfaces to R (see the [r](r/) subdirectory) and possibly other
+languages in the future.
+
+Jittering takes aggregate OD data plus zones and geographic datasets
+representing trip start and end points. The output is geographic lines
+representing movement between the zones that can be stored as GeoJSON
 files. The name comes from jittering in a [data visualisation
 context](https://ggplot2-book.org/layers.html?q=noise#position), which
 refers to the addition of random noise to the location of points,
@@ -337,20 +341,21 @@ odjitter disaggregate --od-csv-path data/od.csv \
 
 ``` bash
 head output_individual.geojson
+rm output_individual.geojson
 ```
 
 <div class="cell-output-stdout">
 
     {"type":"FeatureCollection", "features":[
-    {"geometry":{"coordinates":[[-3.2135610613015526,55.93421097862768],[-3.212232711999157,55.93332165403505]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2146097561854017,55.93170417067243],[-3.207398234215145,55.93226483238321]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2092352469528884,55.933414631097314],[-3.2232443215658635,55.92984479481026]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.215268387637175,55.93346370497761],[-3.2173655585178675,55.9304200482236]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.207921236104001,55.932725149342815],[-3.204781939847086,55.93615884155918]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2201663419808852,55.93491873446773],[-3.219780579470866,55.93501173548011]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2149204733209626,55.936069295852164],[-3.220548578954645,55.933477325246955]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2175899526711524,55.93217765442912],[-3.2194225271063255,55.92798121836583]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2040507101538713,55.93093756507587],[-3.2260899147288638,55.92866578865467]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2154679451832964,55.935540706527625],[-3.218453677239249,55.92853201833366]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2202321744018625,55.935311324856606],[-3.204851590522035,55.93890397532416]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.215814953487079,55.92924617963998],[-3.213969649554224,55.930877605350176]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2237506870847548,55.92721591368476],[-3.212852617740874,55.934932990229505]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2249257431549525,55.92875852478529],[-3.2152209783732557,55.92794188201095]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2176188923949174,55.93389162877519],[-3.2188622645777003,55.927477393565745]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.217186901129267,55.93516961488264],[-3.212562622129719,55.92926625668239]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.226308161992078,55.927700457443194],[-3.2081068109002397,55.933056224433884]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2128071377310263,55.927939421965455],[-3.2186965227407387,55.933671556081265]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
 
 </div>
 
