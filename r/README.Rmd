@@ -21,7 +21,7 @@ The goal of this {odjitter} R package is to provide an R interface to the [odjit
 Install the development version as follows
 
 ```{r, eval=FALSE}
-remotes::install_github("dabreegster/odjitter", subdir = "r", ref = "rpkg")
+remotes::install_github("dabreegster/odjitter", subdir = "r")
 ```
 
 ## R interface to `odjitter` Rust crate via system commands

@@ -13,13 +13,18 @@ processing origin-destination data.
 Install the development version as follows
 
 ``` r
-remotes::install_github("dabreegster/odjitter", subdir = "r", ref = "rpkg")
+remotes::install_github("dabreegster/odjitter", subdir = "r")
 ```
 
 ## R interface to `odjitter` Rust crate via system commands
 
 ``` r
 library(odjitter)
+#> 
+#> Attaching package: 'odjitter'
+#> The following object is masked from 'package:base':
+#> 
+#>     jitter
 ```
 
 ``` r
