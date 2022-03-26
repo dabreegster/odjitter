@@ -57,6 +57,16 @@ jitter = function(
     data_dir = tempdir()
     ) {
   
+  installed = odjitter_is_installed()
+  if(!installed) {
+    message("Cannot find the odjitter command on your computer")
+    stop(
+      "# Try installing it with the following command:\n",
+      "cargo install --git https://github.com/dabreegster/odjitter\n",
+      "# You need to have installed cargo"
+      )
+  }
+  
   # assigning null variables to appropriate values
   if(is.null(zone_name_key)) zone_name_key = names(zones)[1]
   if(is.null(origin_key)) origin_key = names(od)[1]
@@ -93,4 +103,9 @@ jitter = function(
   system(msg)
   res = sf::read_sf(output_path)
   res[names(od)]
+}
+
+odjitter_is_installed = function() {
+  sysoutput = system("odjitter --help", intern = TRUE)
+  grepl(pattern = "odjitter", x = sysoutput[1])
 }
