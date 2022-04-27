@@ -41,11 +41,22 @@
 #'   subpoints = road_network,
 #'   disaggregation_threshold = 50
 #' )
+#' zones_d = zones[1:2, ]
+#' zones_d[[1]] = c("d1", "d2")
+#' od[[2]] = sample(c("d1", "d2"), nrow(od), TRUE)
+#' od_jittered = jitter(
+#'   od,
+#'   zones,
+#'   zones_d = zones_d,
+#'   subpoints = road_network,
+#'   disaggregation_threshold = 50
+#' )
+#' plot(od_jittered)
 jitter = function(
     od,
     zones,
-    zones_d = NULL,
     subpoints = NULL,
+    zones_d = NULL,
     zone_name_key = NULL,
     origin_key = NULL,
     destination_key = NULL,
@@ -81,8 +92,8 @@ jitter = function(
   if(is.null(origin_key)) origin_key = names(od)[1]
   if(is.null(destination_key)) destination_key = names(od)[2]
   if(!is.null(zones_d)) {
-    zones = zones[1, ]
-    zones_d = zones_d[1, ]
+    zones = zones[1]
+    zones_d = zones_d[1]
     names(zones_d) = names(zones)
     zones = rbind(zones, zones_d)
   }

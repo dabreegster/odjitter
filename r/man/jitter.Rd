@@ -7,8 +7,8 @@
 jitter(
   od,
   zones,
-  zones_d = NULL,
   subpoints = NULL,
+  zones_d = NULL,
   zone_name_key = NULL,
   origin_key = NULL,
   destination_key = NULL,
@@ -35,10 +35,10 @@ jitter(
 \item{zones}{Zones with \code{zone_name_key} corresponding to values in the first
 (and maybe second also) column in \code{od}}
 
+\item{subpoints}{Geographic dataset from which jittered desire lines start and end}
+
 \item{zones_d}{Destination zones, the first column of which corresponds to
 values in the second column of \code{od}}
-
-\item{subpoints}{Geographic dataset from which jittered desire lines start and end}
 
 \item{zone_name_key}{The name of the key linking zones to the \code{od} data}
 
@@ -96,4 +96,15 @@ od_jittered = jitter(
   subpoints = road_network,
   disaggregation_threshold = 50
 )
+zones_d = zones[1:2, ]
+zones_d[[1]] = c("d1", "d2")
+od[[2]] = sample(c("d1", "d2"), nrow(od), TRUE)
+od_jittered = jitter(
+  od,
+  zones,
+  zones_d = zones_d,
+  subpoints = road_network,
+  disaggregation_threshold = 50
+)
+plot(od_jittered)
 }
