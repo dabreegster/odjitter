@@ -21,6 +21,8 @@
 #' @param zones_path Path to zones (usually irrelevant)
 #' @param data_dir The directory where intermediate
 #'   data files will be saved. `tempdir()` by default.
+#' @param show_command Show the command line call for jittering?
+#'   Set to FALSE by default, set it to TRUE for debugging/educational purposes.
 #' @return
 #' @export
 #'
@@ -28,11 +30,14 @@
 #' od = readr::read_csv("https://github.com/dabreegster/odjitter/raw/main/data/od.csv")
 #' zones = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/zones.geojson")
 #' road_network = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/road_network.geojson")
+#' od_jittered = jitter(od, zones, subpoints = road_network)
+#' od_jittered = jitter(od, zones, subpoints = road_network, show_command = TRUE)
 #' od_jittered = jitter(
 #'   od,
 #'   zones,
 #'   subpoints = road_network,
 #'   disaggregation_threshold = 50
+#' )
 #' )
 jitter = function(
     od,
@@ -54,7 +59,8 @@ jitter = function(
     subpoints_origins_path = NULL,
     subpoints_destinations_path = NULL,
     zones_path = NULL,
-    data_dir = tempdir()
+    data_dir = tempdir(),
+    show_command = FALSE
     ) {
   
   installed = odjitter_is_installed()
@@ -100,6 +106,10 @@ jitter = function(
   --disaggregation-threshold {disaggregation_threshold} \\
   --rng-seed {rng_seed} \\
   --output-path {output_path}")
+  if(show_command) {
+    message("command sent to the system:")
+    cat(msg)
+  }
   system(msg)
   res = sf::read_sf(output_path)
   res[names(od)]
