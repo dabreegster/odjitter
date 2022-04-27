@@ -158,7 +158,13 @@ odjitter jitter --od-csv-path data/od.csv \
     Disaggregating OD data
     Wrote data/output_max10.geojson
 
-You can run odjitter with
+You can run odjitter on OD datasets in which the features in the origins
+are different from the features in the destinations, e.g. if you have
+data on movement between residential areas and parks. However, you need
+to first combine the geographic dataset representing origins and the
+geographic destinations representing destinations into a single object.
+An example of this type of this is is demonstrated in the code chunk
+below.
 
 ``` bash
 odjitter jitter --od-csv-path data/od_destinations.csv \
@@ -166,14 +172,14 @@ odjitter jitter --od-csv-path data/od_destinations.csv \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
   --disaggregation-threshold 50 \
-  --output-path data/output_max10.geojson
+  --output-path data/output_destinations_differ_50.geojson
 ```
 
     Scraped 9 zones from data/zones_combined.geojson
     Scraped 5073 subpoints from data/road_network.geojson
     Scraped 5073 subpoints from data/road_network.geojson
     Disaggregating OD data
-    Wrote data/output_max10.geojson
+    Wrote data/output_destinations_differ_50.geojson
 
 # Outputs
 
@@ -281,15 +287,15 @@ rm output_individual.geojson
 ```
 
     {"type":"FeatureCollection", "features":[
-    {"geometry":{"coordinates":[[-3.219066346822919,55.93005218714644],[-3.2081526751362337,55.93423273501153]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2193848003510954,55.92830850147855],[-3.221332041038032,55.928096613265346]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2159190215303988,55.935974018834955],[-3.2118024904756917,55.930068552171875]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2176416195909656,55.930040417661424],[-3.224859932114512,55.9294946767766]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2138819315610876,55.92967104280829],[-3.208483914066077,55.93459102797074]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2213220666020055,55.93371606965025],[-3.2150814045967664,55.93645642528469]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2047231884011866,55.935064204001954],[-3.2222039528617374,55.92581724823225]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.222303695585118,55.92557740394584],[-3.2128577277498995,55.93282925528065]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2176476930944924,55.93164788015312],[-3.209833911308596,55.93163657991477]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2167615959448037,55.929814462995964],[-3.2063658495301435,55.93748013348288]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2207976691512132,55.926517311561824],[-3.2163721271829604,55.929340999141296]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2124438686257455,55.931475640356766],[-3.2132061872239674,55.93043362079047]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.216879121659801,55.92611018924906],[-3.212262315024418,55.93353745612964]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.205643229896961,55.93586750040956],[-3.215375104201711,55.930062503460746]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.21850947912481,55.934143973311045],[-3.219650612053624,55.9331208172091]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2157729162037625,55.93408969218749],[-3.2144164757015212,55.9317199557622]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.213363817441356,55.93048504735792],[-3.2101571607060206,55.93194587249084]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2194088505941254,55.93505177694654],[-3.204425024057752,55.932575858591534]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
 
 # Details
 

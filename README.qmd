@@ -74,7 +74,7 @@ odjitter jitter --od-csv-path data/od.csv \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
   --disaggregation-threshold 50 \
-  --output-path output_max50.geojson
+  --output-path data/output_max50.geojson
 ```
 
 Try running it with a different `disaggregation-threshold` value (10 in the command below):
@@ -84,8 +84,21 @@ odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
+  --disaggregation-threshold 10 \
+  --output-path data/output_max10.geojson
+```
+
+You can run odjitter on OD datasets in which the features in the origins are different from the features in the destinations, e.g. if you have data on movement between residential areas and parks.
+However, you need to first combine the geographic dataset representing origins and the geographic destinations representing destinations into a single object.
+An example of this type of this is is demonstrated in the code chunk below.
+
+```{bash}
+odjitter jitter --od-csv-path data/od_destinations.csv \
+  --zones-path data/zones_combined.geojson \
+  --subpoints-origins-path data/road_network.geojson \
+  --subpoints-destinations-path data/road_network.geojson \
   --disaggregation-threshold 50 \
-  --output-path output_max10.geojson
+  --output-path data/output_destinations_differ_50.geojson
 ```
 
 # Outputs
