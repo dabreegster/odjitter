@@ -7,6 +7,7 @@
 jitter(
   od,
   zones,
+  zones_d = NULL,
   subpoints = NULL,
   zone_name_key = NULL,
   origin_key = NULL,
@@ -31,7 +32,11 @@ jitter(
 \arguments{
 \item{od}{Origin-destination data}
 
-\item{zones}{Zones with \code{zone_name_key} corresponding to columns in \code{od}}
+\item{zones}{Zones with \code{zone_name_key} corresponding to values in the first
+(and maybe second also) column in \code{od}}
+
+\item{zones_d}{Destination zones, the first column of which corresponds to
+values in the second column of \code{od}}
 
 \item{subpoints}{Geographic dataset from which jittered desire lines start and end}
 
@@ -90,6 +95,5 @@ od_jittered = jitter(
   zones,
   subpoints = road_network,
   disaggregation_threshold = 50
-)
 )
 }

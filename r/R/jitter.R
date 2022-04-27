@@ -1,7 +1,10 @@
 #' Jitter OD data using the Rust crate odjitter
 #'
 #' @param od Origin-destination data
-#' @param zones Zones with `zone_name_key` corresponding to columns in `od`
+#' @param zones Zones with `zone_name_key` corresponding to values in the first
+#'   (and maybe second also) column in `od`
+#' @param zones_d Destination zones, the first column of which corresponds to
+#'   values in the second column of `od`
 #' @param subpoints Geographic dataset from which jittered desire lines start and end
 #' @param zone_name_key The name of the key linking zones to the `od` data
 #' @param origin_key The name of the column in the OD data representing origins
@@ -38,10 +41,10 @@
 #'   subpoints = road_network,
 #'   disaggregation_threshold = 50
 #' )
-#' )
 jitter = function(
     od,
     zones,
+    zones_d = NULL,
     subpoints = NULL,
     zone_name_key = NULL,
     origin_key = NULL,
@@ -77,7 +80,16 @@ jitter = function(
   if(is.null(zone_name_key)) zone_name_key = names(zones)[1]
   if(is.null(origin_key)) origin_key = names(od)[1]
   if(is.null(destination_key)) destination_key = names(od)[2]
-  
+  if(!is.null(zones_d)) {
+    zones = zones[1, ]
+    zones_d = zones_d[1, ]
+    names(zones_d) = names(zones)
+    zones = rbind(zones, zones_d)
+  }
+  geometry_type = sf::st_geometry_type(zones)
+  if(length(unique(geometry_type)) > 1) {
+    zones = sf::st_cast(zones, "MULTIPOLYGON")
+  }
   if(is.null(od_csv_path)) od_csv_path = file.path(data_dir, "od.csv")
   if(is.null(zones_path)) zones_path = file.path(data_dir, "zones.geojson")
   if(!is.null(subpoints)) {
