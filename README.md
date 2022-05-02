@@ -1,6 +1,3 @@
-<div class="cell">
-
-</div>
 
 # odjitter
 
@@ -38,13 +35,9 @@ To check the package installation worked, you can run `odjitter` command
 without arguments. If it prints the following message congratulations,
 it works 🎉
 
-<div class="cell">
-
 ``` bash
 odjitter
 ```
-
-<div class="cell-output-stdout">
 
     odjitter 0.1.0
     Dustin Carlino <dabreegster@gmail.com
@@ -62,10 +55,6 @@ odjitter
                         each, with a `mode` column
         help            Print this message or the help of the given subcommand(s)
         jitter          Import raw data and build an activity model for a region
-
-</div>
-
-</div>
 
 As shown in the output above the `odjitter` command line tools has
 subcommands: `disaggregate` and `jitter`. The main difference between
@@ -98,13 +87,9 @@ repo, the first few lines of which are illustrated below:
     OD data (the field containing zone IDs is specified with
     `--zone-name-key=InterZone` by default):
 
-<div class="cell">
-
 ``` bash
 head -6 data/zones.geojson
 ```
-
-<div class="cell-output-stdout">
 
     {
     "type": "FeatureCollection",
@@ -113,22 +98,14 @@ head -6 data/zones.geojson
     "features": [
     { "type": "Feature", "properties": { "InterZone": "S02001616", "Name": "Merchiston and Greenhill", "TotPop2011": 5018, "ResPop2011": 4730, "HHCnt2011": 2186, "StdAreaHa": 126.910911, "StdAreaKm2": 1.269109, "Shape_Leng": 9073.5402482000009, "Shape_Area": 1269109.10155 }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ -3.2040366, 55.9333372 ], [ -3.2036354, 55.9321624 ], [ -3.2024036, 55.9321874 ], [ -3.2019838, 55.9315586 ], [ -3.2005071, 55.9317411 ], [ -3.199902, 55.931113 ], [ -3.2033504, 55.9308279 ], [ -3.2056319, 55.9309507 ], [ -3.2094979, 55.9308666 ], [ -3.2109753, 55.9299985 ], [ -3.2107073, 55.9285904 ], [ -3.2124928, 55.927854 ], [ -3.2125633, 55.9264661 ], [ -3.2094928, 55.9265616 ], [ -3.212929, 55.9260741 ], [ -3.2130774, 55.9264384 ], [ -3.2183973, 55.9252709 ], [ -3.2208941, 55.925282 ], [ -3.2242732, 55.9258683 ], [ -3.2279975, 55.9277452 ], [ -3.2269867, 55.928489 ], [ -3.2267625, 55.9299817 ], [ -3.2254561, 55.9307854 ], [ -3.224148, 55.9300725 ], [ -3.2197791, 55.9315472 ], [ -3.2222706, 55.9339127 ], [ -3.2224909, 55.934809 ], [ -3.2197844, 55.9354692 ], [ -3.2204535, 55.936195 ], [ -3.218362, 55.9368806 ], [ -3.2165749, 55.937069 ], [ -3.215582, 55.9380761 ], [ -3.2124132, 55.9355465 ], [ -3.212774, 55.9347972 ], [ -3.2119068, 55.9341947 ], [ -3.210138, 55.9349668 ], [ -3.208051, 55.9347716 ], [ -3.2083105, 55.9364224 ], [ -3.2053546, 55.9381495 ], [ -3.2046077, 55.9395298 ], [ -3.20356, 55.9380951 ], [ -3.2024323, 55.936318 ], [ -3.2029121, 55.935831 ], [ -3.204832, 55.9357555 ], [ -3.2040366, 55.9333372 ] ] ] ] } },
 
-</div>
-
-</div>
-
 3.  One or more [.geojson
     file](https://github.com/dabreegster/odjitter/blob/main/data/road_network.geojson)
     representing geographic entities (e.g. road networks) from which
     origin and destination points are sampled
 
-<div class="cell">
-
 ``` bash
 head -6 data/road_network.geojson
 ```
-
-<div class="cell-output-stdout">
 
     {
     "type": "FeatureCollection",
@@ -136,10 +113,6 @@ head -6 data/road_network.geojson
     "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
     "features": [
     { "type": "Feature", "properties": { "osm_id": "3468", "name": "Albyn Place", "highway": "tertiary", "waterway": null, "aerialway": null, "barrier": null, "man_made": null, "access": null, "bicycle": null, "service": null, "z_order": 4, "other_tags": "\"lit\"=>\"yes\",\"lanes\"=>\"3\",\"maxspeed\"=>\"20 mph\",\"sidewalk\"=>\"both\",\"lanes:forward\"=>\"2\",\"lanes:backward\"=>\"1\"" }, "geometry": { "type": "LineString", "coordinates": [ [ -3.207438, 55.9533584 ], [ -3.2065953, 55.9535098 ] ] } },
-
-</div>
-
-</div>
 
 The `jitter` command requires you to set the maximum number of trips for
 all trips in the jittered result, with the argument
@@ -152,54 +125,61 @@ pairs) as in the input (50 in this case).
 With reference to the test data in this repo, you can run the `jitter`
 command line tool as follows:
 
-<div class="cell">
-
 ``` bash
 odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
   --disaggregation-threshold 50 \
-  --output-path output_max50.geojson
+  --output-path data/output_max50.geojson
 ```
-
-<div class="cell-output-stdout">
 
     Scraped 7 zones from data/zones.geojson
     Scraped 5073 subpoints from data/road_network.geojson
     Scraped 5073 subpoints from data/road_network.geojson
     Disaggregating OD data
-    Wrote output_max50.geojson
-
-</div>
-
-</div>
+    Wrote data/output_max50.geojson
 
 Try running it with a different `disaggregation-threshold` value (10 in
 the command below):
 
-<div class="cell">
-
 ``` bash
 odjitter jitter --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --subpoints-origins-path data/road_network.geojson \
   --subpoints-destinations-path data/road_network.geojson \
-  --disaggregation-threshold 50 \
-  --output-path output_max10.geojson
+  --disaggregation-threshold 10 \
+  --output-path data/output_max10.geojson
 ```
-
-<div class="cell-output-stdout">
 
     Scraped 7 zones from data/zones.geojson
     Scraped 5073 subpoints from data/road_network.geojson
     Scraped 5073 subpoints from data/road_network.geojson
     Disaggregating OD data
-    Wrote output_max10.geojson
+    Wrote data/output_max10.geojson
 
-</div>
+You can run odjitter on OD datasets in which the features in the origins
+are different from the features in the destinations, e.g. if you have
+data on movement between residential areas and parks. However, you need
+to first combine the geographic dataset representing origins and the
+geographic destinations representing destinations into a single object.
+An example of this type of this is is demonstrated in the code chunk
+below.
 
-</div>
+``` bash
+odjitter jitter --od-csv-path data/od_destinations.csv \
+  --zones-path data/zones_combined.geojson \
+  --subpoints-origins-path data/road_network.geojson \
+  --subpoints-destinations-path data/road_network.geojson \
+  --disaggregation-threshold 50 \
+  --output-path data/output_destinations_differ_50.geojson
+```
+
+    Scraped 9 zones from data/zones_combined.geojson
+    Scraped 5073 subpoints from data/road_network.geojson
+    Scraped 5073 subpoints from data/road_network.geojson
+    Disaggregating OD data
+    Wrote data/output_destinations_differ_50.geojson
 
 # Outputs
 
@@ -210,10 +190,6 @@ visualisations of desire lines between zones), the central image showing
 the result after setting `disaggregation-threshold` argument to 50, and
 the right hand figure showing the result after setting
 `disaggregation-threshold` to 10.
-
-<div class="cell">
-
-</div>
 
 ![](https://user-images.githubusercontent.com/1825120/153021585-44cc107e-0183-4cc3-b7e7-0f72c4fd2c01.png)
 
@@ -226,13 +202,9 @@ used to generate jittered desire lines that start from or go to
 particular points, defined in .geojson files. We will demonstrate this
 on a simple imaginary example:
 
-<div class="cell">
-
 ``` bash
 head data/od_schools.csv
 ```
-
-<div class="cell-output-stdout">
 
     origin,destination,walk,bike,other,car
     S02001616,S02001616,232,8,70,0
@@ -245,14 +217,8 @@ head data/od_schools.csv
     S02001616,S02001620,7,0,2,17
     S02001620,S02001620,18,1,5,0
 
-</div>
-
-</div>
-
 Set the origin, destination, and threshold keys (to car meaning that the
 max n. car trips per OD pair is 10 in this case) as follows:
-
-<div class="cell">
 
 ``` bash
 odjitter jitter --od-csv-path data/od_schools.csv \
@@ -266,24 +232,16 @@ odjitter jitter --od-csv-path data/od_schools.csv \
   --output-path output_max10_schools.geojson
 ```
 
-<div class="cell-output-stdout">
-
     Scraped 7 zones from data/zones.geojson
     Scraped 5073 subpoints from data/road_network.geojson
     Scraped 31 subpoints from data/schools.geojson
     Disaggregating OD data
     Wrote output_max10_schools.geojson
 
-</div>
-
-</div>
-
 You can also set weights associated with each origin and destination in
 the input data. The following example weights trips to schools
 proportional to the values in the ‘weight’ key for each imaginary data
 point represented in the `schools.geojson` object:
-
-<div class="cell">
 
 ``` bash
 odjitter jitter --od-csv-path data/od_schools.csv \
@@ -298,17 +256,11 @@ odjitter jitter --od-csv-path data/od_schools.csv \
   --output-path output_max10_schools_with_weights.geojson
 ```
 
-<div class="cell-output-stdout">
-
     Scraped 7 zones from data/zones.geojson
     Scraped 5073 subpoints from data/road_network.geojson
     Scraped 31 subpoints from data/schools.geojson
     Disaggregating OD data
     Wrote output_max10_schools_with_weights.geojson
-
-</div>
-
-</div>
 
 # `disaggregate` OD data
 
@@ -319,61 +271,41 @@ software such as [A/B Street](https://github.com/a-b-street/abstreet) is
 an example where disaggregate data may be needed. The `disaggregate`
 command does this full disaggregation work, as demonstrated below.
 
-<div class="cell">
-
 ``` bash
 odjitter disaggregate --od-csv-path data/od.csv \
   --zones-path data/zones.geojson \
   --output-path output_individual.geojson
 ```
 
-<div class="cell-output-stdout">
-
     Scraped 7 zones from data/zones.geojson
     Disaggregating OD data
     Wrote output_individual.geojson
-
-</div>
-
-</div>
-
-<div class="cell">
 
 ``` bash
 head output_individual.geojson
 rm output_individual.geojson
 ```
 
-<div class="cell-output-stdout">
-
     {"type":"FeatureCollection", "features":[
-    {"geometry":{"coordinates":[[-3.2154679451832964,55.935540706527625],[-3.218453677239249,55.92853201833366]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2202321744018625,55.935311324856606],[-3.204851590522035,55.93890397532416]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.215814953487079,55.92924617963998],[-3.213969649554224,55.930877605350176]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2237506870847548,55.92721591368476],[-3.212852617740874,55.934932990229505]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2249257431549525,55.92875852478529],[-3.2152209783732557,55.92794188201095]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2176188923949174,55.93389162877519],[-3.2188622645777003,55.927477393565745]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.217186901129267,55.93516961488264],[-3.212562622129719,55.92926625668239]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.226308161992078,55.927700457443194],[-3.2081068109002397,55.933056224433884]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2128071377310263,55.927939421965455],[-3.2186965227407387,55.933671556081265]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-
-</div>
-
-</div>
+    {"geometry":{"coordinates":[[-3.2167615959448037,55.929814462995964],[-3.2063658495301435,55.93748013348288]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2207976691512132,55.926517311561824],[-3.2163721271829604,55.929340999141296]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2124438686257455,55.931475640356766],[-3.2132061872239674,55.93043362079047]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.216879121659801,55.92611018924906],[-3.212262315024418,55.93353745612964]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.205643229896961,55.93586750040956],[-3.215375104201711,55.930062503460746]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.21850947912481,55.934143973311045],[-3.219650612053624,55.9331208172091]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2157729162037625,55.93408969218749],[-3.2144164757015212,55.9317199557622]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.213363817441356,55.93048504735792],[-3.2101571607060206,55.93194587249084]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2194088505941254,55.93505177694654],[-3.204425024057752,55.932575858591534]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
 
 # Details
 
 For full details on the arguments of each of `odjitter`’s subcommands
 can be viewed with the `--help` flag:
 
-<div class="cell">
-
 ``` bash
 odjitter jitter --help
 odjitter disaggregate --help
 ```
-
-<div class="cell-output-stdout">
 
     odjitter-jitter 
     Import raw data and build an activity model for a region
@@ -496,10 +428,6 @@ odjitter disaggregate --help
             --zones-path <ZONES_PATH>
                 The path to a GeoJSON file with named zones
 
-</div>
-
-</div>
-
 # Similar work
 
 The technique is implemented in the function
@@ -514,7 +442,3 @@ around 1000 times faster than the R implementation.
 Lovelace, Robin, Rosa Félix, and Dustin Carlino Under Review Jittering:
 A Computationally Efficient Method for Generating Realistic Route
 Networks from Origin-Destination Data. TBC.
-
-<div class="cell">
-
-</div>

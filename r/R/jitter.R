@@ -1,7 +1,10 @@
 #' Jitter OD data using the Rust crate odjitter
 #'
 #' @param od Origin-destination data
-#' @param zones Zones with `zone_name_key` corresponding to columns in `od`
+#' @param zones Zones with `zone_name_key` corresponding to values in the first
+#'   (and maybe second also) column in `od`
+#' @param zones_d Destination zones, the first column of which corresponds to
+#'   values in the second column of `od`
 #' @param subpoints Geographic dataset from which jittered desire lines start and end
 #' @param zone_name_key The name of the key linking zones to the `od` data
 #' @param origin_key The name of the column in the OD data representing origins
@@ -21,6 +24,8 @@
 #' @param zones_path Path to zones (usually irrelevant)
 #' @param data_dir The directory where intermediate
 #'   data files will be saved. `tempdir()` by default.
+#' @param show_command Show the command line call for jittering?
+#'   Set to FALSE by default, set it to TRUE for debugging/educational purposes.
 #' @return
 #' @export
 #'
@@ -28,16 +33,30 @@
 #' od = readr::read_csv("https://github.com/dabreegster/odjitter/raw/main/data/od.csv")
 #' zones = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/zones.geojson")
 #' road_network = sf::read_sf("https://github.com/dabreegster/odjitter/raw/main/data/road_network.geojson")
+#' od_jittered = jitter(od, zones, subpoints = road_network)
+#' od_jittered = jitter(od, zones, subpoints = road_network, show_command = TRUE)
 #' od_jittered = jitter(
 #'   od,
 #'   zones,
 #'   subpoints = road_network,
 #'   disaggregation_threshold = 50
 #' )
+#' zones_d = zones[1:2, ]
+#' zones_d[[1]] = c("d1", "d2")
+#' od[[2]] = sample(c("d1", "d2"), nrow(od), TRUE)
+#' od_jittered = jitter(
+#'   od,
+#'   zones,
+#'   zones_d = zones_d,
+#'   subpoints = road_network,
+#'   disaggregation_threshold = 50
+#' )
+#' plot(od_jittered)
 jitter = function(
     od,
     zones,
     subpoints = NULL,
+    zones_d = NULL,
     zone_name_key = NULL,
     origin_key = NULL,
     destination_key = NULL,
@@ -54,7 +73,8 @@ jitter = function(
     subpoints_origins_path = NULL,
     subpoints_destinations_path = NULL,
     zones_path = NULL,
-    data_dir = tempdir()
+    data_dir = tempdir(),
+    show_command = FALSE
     ) {
   
   installed = odjitter_is_installed()
@@ -71,7 +91,16 @@ jitter = function(
   if(is.null(zone_name_key)) zone_name_key = names(zones)[1]
   if(is.null(origin_key)) origin_key = names(od)[1]
   if(is.null(destination_key)) destination_key = names(od)[2]
-  
+  if(!is.null(zones_d)) {
+    zones = zones[1]
+    zones_d = zones_d[1]
+    names(zones_d) = names(zones)
+    zones = rbind(zones, zones_d)
+  }
+  geometry_type = sf::st_geometry_type(zones)
+  if(length(unique(geometry_type)) > 1) {
+    zones = sf::st_cast(zones, "MULTIPOLYGON")
+  }
   if(is.null(od_csv_path)) od_csv_path = file.path(data_dir, "od.csv")
   if(is.null(zones_path)) zones_path = file.path(data_dir, "zones.geojson")
   if(!is.null(subpoints)) {
@@ -100,6 +129,10 @@ jitter = function(
   --disaggregation-threshold {disaggregation_threshold} \\
   --rng-seed {rng_seed} \\
   --output-path {output_path}")
+  if(show_command) {
+    message("command sent to the system:")
+    cat(msg)
+  }
   system(msg)
   res = sf::read_sf(output_path)
   res[names(od)]
