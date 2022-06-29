@@ -52,6 +52,17 @@
 #'   disaggregation_threshold = 50
 #' )
 #' plot(od_jittered)
+#' \dontrun{
+#' od_jittered = jitter(
+#'   od,
+#'   zones,
+#'   zones_d = zones_d,
+#'   subpoints = road_network,
+#'   disaggregation_threshold = 50,
+#'   odjitter_location = r"(powershell C:\Users\geoevid\.cargo\bin\odjitter.exe)"
+#' )
+#' plot(od_jittered)
+#' }
 jitter = function(
     od,
     zones,
@@ -74,10 +85,15 @@ jitter = function(
     subpoints_destinations_path = NULL,
     zones_path = NULL,
     data_dir = tempdir(),
-    show_command = FALSE
+    show_command = FALSE,
+    odjitter_location = "odjitter"
     ) {
   
-  installed = odjitter_is_installed()
+  installed = odjitter_is_installed(odjitter_location)
+  # powershell = installed == "PowerShell"
+  # if(powershell) {
+  #   installed = system("odjitter --help", intern = TRUE)
+  # }
   if(!installed) {
     message("Cannot find the odjitter command on your computer")
     stop(
@@ -118,7 +134,7 @@ jitter = function(
   readr::write_csv(od, od_csv_path)
   sf::write_sf(zones, file.path(data_dir, "zones.geojson"), delete_dsn = TRUE)
   
-  msg = glue::glue("odjitter jitter --od-csv-path {od_csv_path} \\
+  msg = glue::glue("{odjitter_location} jitter --od-csv-path {od_csv_path} \\
   --zones-path {zones_path} \\
   --zone-name-key {zone_name_key} \\
   --origin-key {origin_key} \\
@@ -138,7 +154,13 @@ jitter = function(
   res[names(od)]
 }
 
-odjitter_is_installed = function() {
-  sysoutput = system("odjitter --help", intern = TRUE)
+odjitter_is_installed = function(odjitter_location) {
+  # if(Sys.info()[['sysname']] == "Windows") {
+  #   sysoutput = system("powershell", intern = TRUE)
+  #   if(sysoutput[1] == "Windows PowerShell") {
+  #     return("PowerShell")
+  #   }
+  # }
+  sysoutput = system(paste0(odjitter_location, " --help"), intern = TRUE)
   grepl(pattern = "odjitter", x = sysoutput[1])
 }

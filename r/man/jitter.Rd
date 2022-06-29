@@ -26,7 +26,8 @@ jitter(
   subpoints_destinations_path = NULL,
   zones_path = NULL,
   data_dir = tempdir(),
-  show_command = FALSE
+  show_command = FALSE,
+  odjitter_location = "odjitter"
 )
 }
 \arguments{
@@ -78,9 +79,6 @@ data files will be saved. \code{tempdir()} by default.}
 \item{show_command}{Show the command line call for jittering?
 Set to FALSE by default, set it to TRUE for debugging/educational purposes.}
 }
-\value{
-
-}
 \description{
 Jitter OD data using the Rust crate odjitter
 }
@@ -107,4 +105,14 @@ od_jittered = jitter(
   disaggregation_threshold = 50
 )
 plot(od_jittered)
+\dontrun{
+od_jittered = jitter(
+  od,
+  zones,
+  zones_d = zones_d,
+  subpoints = road_network,
+  disaggregation_threshold = 50,
+  odjitter_location = r"(powershell C:\Users\geoevid\.cargo\bin\odjitter.exe)"
+)
+}
 }
