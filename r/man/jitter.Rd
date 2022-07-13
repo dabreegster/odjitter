@@ -26,7 +26,8 @@ jitter(
   subpoints_destinations_path = NULL,
   zones_path = NULL,
   data_dir = tempdir(),
-  show_command = FALSE
+  show_command = FALSE,
+  odjitter_location = "odjitter"
 )
 }
 \arguments{
@@ -116,4 +117,14 @@ plot(od_jittered)
 #   disaggregation_threshold = 50
 # )
 # summary(j_schools)
+\dontrun{
+od_jittered = jitter(
+  od,
+  zones,
+  zones_d = zones_d,
+  subpoints = road_network,
+  disaggregation_threshold = 50,
+  odjitter_location = r"(powershell C:\Users\geoevid\.cargo\bin\odjitter.exe)"
+)
+}
 }
