@@ -79,6 +79,9 @@ data files will be saved. \code{tempdir()} by default.}
 \item{show_command}{Show the command line call for jittering?
 Set to FALSE by default, set it to TRUE for debugging/educational purposes.}
 }
+\value{
+An \code{sf} object with the jittered result
+}
 \description{
 Jitter OD data using the Rust crate odjitter
 }
@@ -105,6 +108,15 @@ od_jittered = jitter(
   disaggregation_threshold = 50
 )
 plot(od_jittered)
+# j_schools = jitter(
+#   od = sf::read_sf("data-raw/school-example/od_to_jitter.geojson"),
+#   subpoints_origins = sf::read_sf("data-raw/school-example/subpoints.geojson"), 
+#   subpoints_destinations = sf::st_read("data-raw/school-example/subpoints_destinations.geojson"),
+#   zones = sf::read_sf("data-raw/school-example/zones.geojson"), 
+#   zones_d = sf::read_sf("data-raw/school-example/zones_d.geojson"),
+#   disaggregation_threshold = 50
+# )
+# summary(j_schools)
 \dontrun{
 od_jittered = jitter(
   od,
