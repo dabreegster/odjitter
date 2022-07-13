@@ -26,7 +26,7 @@
 #'   data files will be saved. `tempdir()` by default.
 #' @param show_command Show the command line call for jittering?
 #'   Set to FALSE by default, set it to TRUE for debugging/educational purposes.
-#' @return
+#' @return An `sf` object with the jittered result
 #' @export
 #'
 #' @examples
@@ -52,6 +52,15 @@
 #'   disaggregation_threshold = 50
 #' )
 #' plot(od_jittered)
+#' # j_schools = jitter(
+#' #   od = sf::read_sf("data-raw/school-example/od_to_jitter.geojson"),
+#' #   subpoints_origins = sf::read_sf("data-raw/school-example/subpoints.geojson"), 
+#' #   subpoints_destinations = sf::st_read("data-raw/school-example/subpoints_destinations.geojson"),
+#' #   zones = sf::read_sf("data-raw/school-example/zones.geojson"), 
+#' #   zones_d = sf::read_sf("data-raw/school-example/zones_d.geojson"),
+#' #   disaggregation_threshold = 50
+#' # )
+#' # summary(j_schools)
 jitter = function(
     od,
     zones,
@@ -76,7 +85,6 @@ jitter = function(
     data_dir = tempdir(),
     show_command = FALSE
     ) {
-  
   installed = odjitter_is_installed()
   if(!installed) {
     message("Cannot find the odjitter command on your computer")
@@ -115,6 +123,16 @@ jitter = function(
   if(is.null(output_path)) {
     output_path = file.path(data_dir, "od_jittered.geojson")
   }
+  
+  disaggregation_key_exists = any(names(od) %in% disaggregation_key)
+  if(!disaggregation_key_exists && disaggregation_key == "all") {
+    disaggregation_key = names(od)[3]
+  }
+  # prevent numeric values:
+  od[[origin_key]] = paste0("jitter", od[[origin_key]])
+  od[[destination_key]] = paste0("jitter", od[[destination_key]])
+  zones[[zone_name_key]] = paste0("jitter", zones[[zone_name_key]])
+  
   readr::write_csv(od, od_csv_path)
   sf::write_sf(zones, file.path(data_dir, "zones.geojson"), delete_dsn = TRUE)
   
@@ -135,6 +153,8 @@ jitter = function(
   }
   system(msg)
   res = sf::read_sf(output_path)
+  res[[origin_key]] = gsub("jitter", "", x = res[[origin_key]])
+  res[[destination_key]] = gsub("jitter", "", x = res[[destination_key]])
   res[names(od)]
 }
 
