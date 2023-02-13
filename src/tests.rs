@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use geo_types::Point;
 use geojson::GeoJson;
+use ordered_float::NotNan;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use serde_json::{Map, Value};
@@ -21,6 +22,7 @@ fn test_sums_match() {
             origin_key: "geo_code1".to_string(),
             destination_key: "geo_code2".to_string(),
             min_distance_meters: 1.0,
+            deduplicate_pairs: false,
         };
         let mut rng = StdRng::seed_from_u64(42);
         let mut raw_output = Vec::new();
@@ -64,7 +66,7 @@ fn test_different_subpoints() {
     // Keep a copy of the schools as a set
     let schools: HashSet<_> = destination_subpoints
         .iter()
-        .map(|pt| hashify_point(&pt.point))
+        .map(|pt| hashify_point(pt.point))
         .collect();
 
     let options = Options {
@@ -73,6 +75,7 @@ fn test_different_subpoints() {
         origin_key: "origin".to_string(),
         destination_key: "destination".to_string(),
         min_distance_meters: 1.0,
+        deduplicate_pairs: false,
     };
     let disaggregation_threshold = 1;
     let disaggregation_key = "walk".to_string();
@@ -100,7 +103,7 @@ fn test_different_subpoints() {
                 feature.geometry.as_ref().map(|geom| &geom.value)
             {
                 let pt = ls.last().unwrap();
-                if !schools.contains(&hashify_point(&Point::new(pt[0], pt[1]))) {
+                if !schools.contains(&hashify_point(Point::new(pt[0], pt[1]))) {
                     panic!(
                         "An output feature doesn't end at a school subpoint: {:?}",
                         feature
@@ -139,6 +142,7 @@ fn test_disaggregate() {
         origin_key: "geo_code1".to_string(),
         destination_key: "geo_code2".to_string(),
         min_distance_meters: 1.0,
+        deduplicate_pairs: false,
     };
     let mut rng = StdRng::seed_from_u64(42);
     let mut raw_output = Vec::new();
@@ -172,6 +176,68 @@ fn test_disaggregate() {
             input_sum,
             output_sum,
         );
+    }
+}
+
+#[test]
+fn test_deduplicate_pairs() {
+    let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
+    let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
+
+    for deduplicate_pairs in [false, true] {
+        let options = Options {
+            subsample_origin: Subsample::WeightedPoints(subpoints.clone()),
+            subsample_destination: Subsample::WeightedPoints(subpoints.clone()),
+            origin_key: "geo_code1".to_string(),
+            destination_key: "geo_code2".to_string(),
+            min_distance_meters: 1.0,
+            deduplicate_pairs,
+        };
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut raw_output = Vec::new();
+        let disaggregation_threshold = 1;
+        let disaggregation_key = "all".to_string();
+        jitter(
+            "data/od.csv",
+            &zones,
+            disaggregation_threshold,
+            disaggregation_key,
+            &mut rng,
+            options,
+            &mut raw_output,
+        )
+        .unwrap();
+        let output = String::from_utf8(raw_output)
+            .unwrap()
+            .parse::<GeoJson>()
+            .unwrap();
+
+        if let GeoJson::FeatureCollection(ref fc) = output {
+            let mut unique_pairs: HashSet<Vec<NotNan<f64>>> = HashSet::new();
+
+            for feature in &fc.features {
+                if let Some(geojson::Value::LineString(ls)) =
+                    feature.geometry.as_ref().map(|geom| &geom.value)
+                {
+                    unique_pairs.insert(
+                        ls.iter()
+                            .flatten()
+                            .map(|x| NotNan::new(*x).unwrap())
+                            .collect(),
+                    );
+                }
+            }
+
+            let anything_deduped = fc.features.len() != unique_pairs.len();
+            if anything_deduped == deduplicate_pairs {
+                panic!(
+                    "With deduplicate_pairs={}, we got {} LineStrings, with {} unique geometries",
+                    deduplicate_pairs,
+                    fc.features.len(),
+                    unique_pairs.len()
+                );
+            }
+        }
     }
 }
 
@@ -210,7 +276,6 @@ fn sum_trips_output(gj: &GeoJson, disaggregation_key: &str) -> f64 {
     total
 }
 
-// Since f64 isn't hashable, just round to 3 decimal places for comparisons
-fn hashify_point(pt: &Point<f64>) -> Point<i64> {
-    Point::new((pt.x() * 1000.0) as i64, (pt.y() * 1000.0) as i64)
+fn hashify_point(pt: Point<f64>) -> Point<NotNan<f64>> {
+    Point::new(NotNan::new(pt.x()).unwrap(), NotNan::new(pt.y()).unwrap())
 }

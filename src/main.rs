@@ -88,6 +88,11 @@ struct CommonArgs {
     /// Guarantee that jittered origin and destination points are at least this distance apart.
     #[clap(long, default_value = "1.0")]
     min_distance_meters: f64,
+    /// Prevent duplicate (origin, destination) pairs from appearing in the output. This may
+    /// increase memory and runtime requirements. Note the duplication uses the floating point
+    /// precision of the input data, and only consider geometry (not any properties).
+    #[clap(long)]
+    deduplicate_pairs: bool,
 }
 
 fn main() -> Result<()> {
@@ -122,6 +127,7 @@ fn main() -> Result<()> {
         origin_key: common.origin_key,
         destination_key: common.destination_key,
         min_distance_meters: common.min_distance_meters,
+        deduplicate_pairs: common.deduplicate_pairs,
     };
     let mut rng = if let Some(seed) = common.rng_seed {
         StdRng::seed_from_u64(seed)

@@ -7,7 +7,7 @@ mod scrape;
 #[cfg(test)]
 mod tests;
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::Write;
 use std::path::Path;
 
@@ -18,6 +18,7 @@ use geo::algorithm::contains::Contains;
 use geo::algorithm::haversine_distance::HaversineDistance;
 use geo_types::{LineString, MultiPolygon, Point, Rect};
 use geojson::{Feature, GeoJson};
+use ordered_float::NotNan;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 use rand::Rng;
@@ -42,6 +43,10 @@ pub struct Options {
     pub destination_key: String,
     /// Guarantee that jittered points are at least this distance apart.
     pub min_distance_meters: f64,
+    /// Prevent duplicate (origin, destination) pairs from appearing in the output. This may
+    /// increase memory and runtime requirements. Note the duplication uses the floating point
+    /// precision of the input data, and only consider geometry (not any properties).
+    pub deduplicate_pairs: bool,
 }
 
 /// Specifies how specific points should be generated within a zone.
@@ -128,6 +133,8 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
     writeln!(writer, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
     let mut add_comma = false;
 
+    let mut seen_pairs: HashSet<ODPair> = HashSet::new();
+
     println!("Disaggregating OD data");
     for rec in csv::Reader::from_reader(File::open(csv_path)?).deserialize() {
         // It's tempting to deserialize directly into a serde_json::Map<String, Value> and
@@ -205,6 +212,15 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
                 let o = origin_sampler.sample(rng);
                 let d = destination_sampler.sample(rng);
                 if o.haversine_distance(&d) >= options.min_distance_meters {
+                    if options.deduplicate_pairs {
+                        let pair = hashify(o, d);
+                        if seen_pairs.contains(&pair) {
+                            continue;
+                        } else {
+                            seen_pairs.insert(pair);
+                        }
+                    }
+
                     if add_comma {
                         writeln!(writer, ",")?;
                     } else {
@@ -296,6 +312,8 @@ pub fn disaggregate<P: AsRef<Path>, W: Write>(
             &destination_id,
         )?;
 
+        let mut seen_pairs: HashSet<ODPair> = HashSet::new();
+
         // Interpret all columns except origin_key and destination_key as numeric, split by mode
         for (mode, value) in string_map {
             if let Ok(count) = value.parse::<f64>() {
@@ -305,6 +323,15 @@ pub fn disaggregate<P: AsRef<Path>, W: Write>(
                         let o = origin_sampler.sample(rng);
                         let d = destination_sampler.sample(rng);
                         if o.haversine_distance(&d) >= options.min_distance_meters {
+                            if options.deduplicate_pairs {
+                                let pair = hashify(o, d);
+                                if seen_pairs.contains(&pair) {
+                                    continue;
+                                } else {
+                                    seen_pairs.insert(pair);
+                                }
+                            }
+
                             if add_comma {
                                 writeln!(writer, ",")?;
                             } else {
@@ -443,4 +470,15 @@ impl<'a> Subsampler<'a> {
             }
         }
     }
+}
+
+type ODPair = [NotNan<f64>; 4];
+fn hashify(o: Point<f64>, d: Point<f64>) -> ODPair {
+    // We can't collect into an array, so write this a bit manually
+    [
+        NotNan::new(o.x()).unwrap(),
+        NotNan::new(o.y()).unwrap(),
+        NotNan::new(d.x()).unwrap(),
+        NotNan::new(d.y()).unwrap(),
+    ]
 }
