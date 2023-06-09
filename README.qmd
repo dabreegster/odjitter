@@ -108,9 +108,10 @@ odjitter jitter --od-csv-path data/od_destinations.csv \
 
 The figure below shows the output of the `jitter` commands above visually, with the left image showing unjittered results with origins and destinations going to zone centroids (as in many if not most visualisations of desire lines between zones), the central image showing the result after setting `disaggregation-threshold` argument to 50, and the right hand figure showing the result after setting `disaggregation-threshold` to 10.
 
-You can call the Rust code from R, as illustrated by the code below which generates the figure below.
+You can call the Rust code from R, as illustrated by the code below which generates the datasets shown in the figures below.
 
-```{r thresholddemo, fig.show='hold', out.width="30%", message=FALSE}
+```{r}
+#| echo: false
 remotes::install_github("dabreegster/odjitter", subdir = "r")
 # Note: code to generate the visualisation below
 od = readr::read_csv("data/od.csv")
@@ -119,6 +120,16 @@ network = sf::read_sf("data/road_network.geojson")
 od_sf = od::od_to_sf(od, zones)
 odjittered_max_50 = odjitter::jitter(od, zones, network, disaggregation_threshold = 50)
 odjittered_max_10 = odjitter::jitter(od, zones, network, disaggregation_threshold = 10)
+```
+
+```{r}
+#| echo: false
+#| label: thresholddemo
+#| fig-cap: "Demonstration of the effect of the disaggregation threshold on the number of desire lines"
+#| fig-subcap: 
+#|   - "No jittering"
+#|   - "Jittering (disaggregation threshold = 50)"
+#|   - "Jittering (disaggregation threshold = 10)"
 plot(zones$geometry, border = "grey")
 plot(network$geometry, col = "red", add = TRUE)
 plot(od_sf$geometry, add = TRUE)

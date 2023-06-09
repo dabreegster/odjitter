@@ -200,36 +200,37 @@ the right hand figure showing the result after setting
 `disaggregation-threshold` to 10.
 
 You can call the Rust code from R, as illustrated by the code below
-which generates the figure below.
+which generates the datasets shown in the figures below.
 
-``` r
-remotes::install_github("dabreegster/odjitter", subdir = "r")
-# Note: code to generate the visualisation below
-od = readr::read_csv("data/od.csv")
-zones = sf::read_sf("data/zones.geojson")
-network = sf::read_sf("data/road_network.geojson")
-od_sf = od::od_to_sf(od, zones)
-odjittered_max_50 = odjitter::jitter(od, zones, network, disaggregation_threshold = 50)
-odjittered_max_10 = odjitter::jitter(od, zones, network, disaggregation_threshold = 10)
-plot(zones$geometry, border = "grey")
-plot(network$geometry, col = "red", add = TRUE)
-plot(od_sf$geometry, add = TRUE)
-plot(zones$geometry, border = "grey")
-plot(network$geometry, col = "red", add = TRUE)
-plot(odjittered_max_50$geometry, add = TRUE)
-plot(zones$geometry, border = "grey")
-plot(network$geometry, col = "red", add = TRUE)
-plot(odjittered_max_10$geometry, add = TRUE)
-```
+    Using github PAT from envvar GITHUB_PAT
 
-<img src="README_files/figure-commonmark/thresholddemo-1.png"
-style="width:30.0%" />
+    Skipping install of 'odjitter' from a github remote, the SHA1 (b1f2613b) has not changed since last install.
+      Use `force = TRUE` to force installation
 
-<img src="README_files/figure-commonmark/thresholddemo-2.png"
-style="width:30.0%" />
+    Rows: 49 Columns: 11
+    ── Column specification ────────────────────────────────────────────────────────
+    Delimiter: ","
+    chr (2): geo_code1, geo_code2
+    dbl (9): all, from_home, train, bus, car_driver, car_passenger, bicycle, foo...
 
-<img src="README_files/figure-commonmark/thresholddemo-3.png"
-style="width:30.0%" />
+    ℹ Use `spec()` to retrieve the full column specification for this data.
+    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    0 origins with no match in zone ids
+
+    0 destinations with no match in zone ids
+
+     points not in od data removed.
+
+![No jittering](README_files/figure-commonmark/thresholddemo-1.png)
+
+![Jittering (disaggregation threshold =
+50)](README_files/figure-commonmark/thresholddemo-2.png)
+
+![Jittering (disaggregation threshold =
+10)](README_files/figure-commonmark/thresholddemo-3.png)
+
+Demonstration of the effect of the disaggregation threshold on the
+number of desire lines
 
 Note: `odjitter` uses a random number generator to sample points, so the
 output will change each time you run it, unless you set the `rng-seed`,
@@ -325,15 +326,15 @@ rm output_individual.geojson
 ```
 
     {"type":"FeatureCollection", "features":[
-    {"geometry":{"coordinates":[[-3.2121431668529117,55.933965915371445],[-3.223916127373195,55.92888261962998]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2167988603260174,55.93356606201116],[-3.2182636986173243,55.9358506825516]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2202216321081445,55.93488542736486],[-3.2153135473815344,55.930809465426414]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2222819488804113,55.93032185794016],[-3.218240393587925,55.93313703649942]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2160510192375495,55.929580935293345],[-3.219279025788014,55.92919031658043]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2186945718978253,55.92554797818593],[-3.2173765997628028,55.929156422821684]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.214524577107455,55.93530128670642],[-3.206031426593628,55.933620480695055]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2183881217012753,55.930809450461716],[-3.215442035294158,55.93293881291448]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.219175472182779,55.92578336251042],[-3.2162245682495696,55.92687392202114]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.21416368669949,55.9309827586199],[-3.2263326436893918,55.927723073778026]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.227001139167081,55.92766804325966],[-3.2194207444715954,55.92998818093757]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2054111902687707,55.93541242980169],[-3.211010425717299,55.93152771970929]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2239760422292054,55.926355044794214],[-3.2135721438925335,55.93547217675702]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.222060095919582,55.927904409736485],[-3.2056249817028504,55.93553216059438]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2168546484580856,55.93002096157258],[-3.2082938843254154,55.93638220059829]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2152276270518354,55.93417287595912],[-3.205316234269755,55.933732740978506]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.219753180030244,55.930832057050814],[-3.217472892979611,55.929650145795925]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2188013128070234,55.92702164678018],[-3.2091869594223295,55.93204849391639]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
 
 # Details
 
