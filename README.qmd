@@ -9,10 +9,12 @@ Rscript -e 'rmarkdown::render("README.Rmd")'
 
 # odjitter
 
-This repo contains the `odjitter` crate that implements a 'jittering' technique for pre-processing origin-destination (OD) data, and interfaces to R (see the [r](r/) subdirectory) and possibly other languages in the future.
+This repo contains the `odjitter` crate that implements a 'jittering' technique for pre-processing origin-destination (OD) data and an associated R interface package (see the [r](r/) subdirectory).
+We hope to support other languages in the future (see [issue #23](https://github.com/dabreegster/odjitter/issues/23)).
 
-Jittering takes aggregate OD data plus zones and geographic datasets representing trip start and end points.
-The output is geographic lines representing movement between the zones that can be stored as GeoJSON files.
+## What is jittering?
+
+Jittering is a method that takes OD data in a .csv file plus zones and geographic datasets representing trip start and end points in .geojson files and outputs geographic lines representing movement between the zones that can be stored as GeoJSON files.
 The name comes from jittering in a [data visualisation context](https://ggplot2-book.org/layers.html?q=noise#position), which refers to the addition of random noise to the location of points, preventing them overlapping.
 
 In the context of OD data jittering refers to randomly moving start and end points associated with OD pairs, as described in an under review paper on the subject (Lovelace et al. under review).
