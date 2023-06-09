@@ -44,6 +44,38 @@ plot(od_unjittered)
 plot(od_jittered)
 ```
 
+## Allowing duplicate OD pairs
+
+By default the `jitter` function will remove duplicate OD pairs.
+This can be disabled by setting `deduplicate_pairs = FALSE`.
+
+```{r}
+#  Default behaviour (no duplicates):
+od_jittered = jitter(
+  od,
+  zones,
+  subpoints = road_network,
+  disaggregation_threshold = 1,
+  show_command = TRUE,
+)
+summary(duplicated(od_jittered$geometry))
+```
+
+```{r}
+
+```{r}
+# Larger example:
+od_jittered = jitter(
+  od,
+  zones,
+  subpoints = road_network,
+  disaggregation_threshold = 1,
+  show_command = TRUE,
+  deduplicate_pairs = FALSE
+)
+summary(duplicated(od_jittered$geometry))
+```
+
 ## R interface to Rust via rextendr (not currently working)
 
 The development of the package was done using the development version of the `rextendr` package.
