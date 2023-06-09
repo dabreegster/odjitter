@@ -1,5 +1,6 @@
 ---
 format: gfm
+bibliography: references.bib
 ---
 
 ```{r eval=FALSE, echo=FALSE}
@@ -17,9 +18,9 @@ We hope to support other languages in the future (see [issue #23](https://github
 Jittering is a method that takes OD data in a .csv file plus zones and geographic datasets representing trip start and end points in .geojson files and outputs geographic lines representing movement between the zones that can be stored as GeoJSON files.
 The name comes from jittering in a [data visualisation context](https://ggplot2-book.org/layers.html?q=noise#position), which refers to the addition of random noise to the location of points, preventing them overlapping.
 
-In the context of OD data jittering refers to randomly moving start and end points associated with OD pairs, as described in an under review paper on the subject (Lovelace et al. under review).
-The crate is still a work in progress: the API may change.
-Issues and pull requests are particularly useful at this stage.
+## Why jitter?
+
+For a more detailed description of the method and an explanation of why it is useful, especially when modeling active modes that require dense active travel networks, see the paper [Jittering: A Computationally Efficient Method for Generating Realistic Route Networks from Origin-Destination Data](https://findingspress.org/article/33873-jittering-a-computationally-efficient-method-for-generating-realistic-route-networks-from-origin-destination-data) [@lovelace_jittering_2022b].
 
 # Installation
 
@@ -198,8 +199,6 @@ The functionality contained in this repo is an extended and much faster implemen
 
 
 # References
-
-Lovelace, Robin, Rosa Félix, and Dustin Carlino Under Review Jittering: A Computationally Efficient Method for Generating Realistic Route Networks from Origin-Destination Data. TBC.
 
 ```{bash, echo=FALSE}
 rm output_max*

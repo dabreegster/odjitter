@@ -2,23 +2,31 @@
 # odjitter
 
 This repo contains the `odjitter` crate that implements a ‘jittering’
-technique for pre-processing origin-destination (OD) data, and
-interfaces to R (see the [r](r/) subdirectory) and possibly other
-languages in the future.
+technique for pre-processing origin-destination (OD) data and an
+associated R interface package (see the [r](r/) subdirectory). We hope
+to support other languages in the future (see [issue
+\#23](https://github.com/dabreegster/odjitter/issues/23)).
 
-Jittering takes aggregate OD data plus zones and geographic datasets
-representing trip start and end points. The output is geographic lines
-representing movement between the zones that can be stored as GeoJSON
-files. The name comes from jittering in a [data visualisation
+## What is jittering?
+
+Jittering is a method that takes OD data in a .csv file plus zones and
+geographic datasets representing trip start and end points in .geojson
+files and outputs geographic lines representing movement between the
+zones that can be stored as GeoJSON files. The name comes from jittering
+in a [data visualisation
 context](https://ggplot2-book.org/layers.html?q=noise#position), which
 refers to the addition of random noise to the location of points,
 preventing them overlapping.
 
-In the context of OD data jittering refers to randomly moving start and
-end points associated with OD pairs, as described in an under review
-paper on the subject (Lovelace et al. under review). The crate is still
-a work in progress: the API may change. Issues and pull requests are
-particularly useful at this stage.
+## Why jitter?
+
+For a more detailed description of the method and an explanation of why
+it is useful, especially when modeling active modes that require dense
+active travel networks, see the paper [Jittering: A Computationally
+Efficient Method for Generating Realistic Route Networks from
+Origin-Destination
+Data](https://findingspress.org/article/33873-jittering-a-computationally-efficient-method-for-generating-realistic-route-networks-from-origin-destination-data)
+(Lovelace, Félix, and Carlino 2022).
 
 # Installation
 
@@ -52,7 +60,7 @@ odjitter
 
     SUBCOMMANDS:
         disaggregate    Fully disaggregate input desire lines into output representing one trip
-                        each, with a `mode` column
+                            each, with a `mode` column
         help            Print this message or the help of the given subcommand(s)
         jitter          Import raw data and build an activity model for a region
 
@@ -287,15 +295,15 @@ rm output_individual.geojson
 ```
 
     {"type":"FeatureCollection", "features":[
-    {"geometry":{"coordinates":[[-3.2167615959448037,55.929814462995964],[-3.2063658495301435,55.93748013348288]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2207976691512132,55.926517311561824],[-3.2163721271829604,55.929340999141296]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2124438686257455,55.931475640356766],[-3.2132061872239674,55.93043362079047]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.216879121659801,55.92611018924906],[-3.212262315024418,55.93353745612964]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.205643229896961,55.93586750040956],[-3.215375104201711,55.930062503460746]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.21850947912481,55.934143973311045],[-3.219650612053624,55.9331208172091]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2157729162037625,55.93408969218749],[-3.2144164757015212,55.9317199557622]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.213363817441356,55.93048504735792],[-3.2101571607060206,55.93194587249084]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2194088505941254,55.93505177694654],[-3.204425024057752,55.932575858591534]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.214880289257255,55.93425814153206],[-3.2061200476469813,55.93653965342566]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2226626753912404,55.92885719038371],[-3.214027671239255,55.93668106269962]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.206085299282606,55.93242540802673],[-3.2105606253211367,55.93297990857682]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2170445136100096,55.930229164773955],[-3.219811418941118,55.9269560297377]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2186515789564445,55.93392174785699],[-3.206706493595633,55.93286576783035]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2118127216180334,55.92910014495392],[-3.2122324264132596,55.933609380961165]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2125552934796704,55.93410981242803],[-3.2192251130719423,55.933695495747365]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.215971191580006,55.92768580509798],[-3.217357048740689,55.93390249158399]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2193767662326658,55.93428313680597],[-3.222990038581186,55.92790597203718]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
 
 # Details
 
@@ -314,6 +322,11 @@ odjitter disaggregate --help
         odjitter jitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --disaggregation-threshold <DISAGGREGATION_THRESHOLD>
 
     OPTIONS:
+            --deduplicate-pairs
+                Prevent duplicate (origin, destination) pairs from appearing in the output. This may
+                increase memory and runtime requirements. Note the duplication uses the floating point
+                precision of the input data, and only consider geometry (not any properties)
+
             --destination-key <DESTINATION_KEY>
                 Which column in the OD row specifies the zone where trips ends? [default: geo_code2]
 
@@ -379,6 +392,11 @@ odjitter disaggregate --help
         odjitter disaggregate [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH>
 
     OPTIONS:
+            --deduplicate-pairs
+                Prevent duplicate (origin, destination) pairs from appearing in the output. This may
+                increase memory and runtime requirements. Note the duplication uses the floating point
+                precision of the input data, and only consider geometry (not any properties)
+
             --destination-key <DESTINATION_KEY>
                 Which column in the OD row specifies the zone where trips ends? [default: geo_code2]
 
@@ -439,6 +457,15 @@ around 1000 times faster than the R implementation.
 
 # References
 
-Lovelace, Robin, Rosa Félix, and Dustin Carlino Under Review Jittering:
-A Computationally Efficient Method for Generating Realistic Route
-Networks from Origin-Destination Data. TBC.
+<div id="refs" class="references csl-bib-body hanging-indent">
+
+<div id="ref-lovelace_jittering_2022b" class="csl-entry">
+
+Lovelace, Robin, Rosa Félix, and Dustin Carlino. 2022. “Jittering: A
+Computationally Efficient Method for Generating Realistic Route Networks
+from Origin-Destination Data.” *Findings*, April, 33873.
+<https://doi.org/10.32866/001c.33873>.
+
+</div>
+
+</div>
