@@ -108,23 +108,27 @@ odjitter jitter --od-csv-path data/od_destinations.csv \
 
 The figure below shows the output of the `jitter` commands above visually, with the left image showing unjittered results with origins and destinations going to zone centroids (as in many if not most visualisations of desire lines between zones), the central image showing the result after setting `disaggregation-threshold` argument to 50, and the right hand figure showing the result after setting `disaggregation-threshold` to 10.
 
-```{r thresholddemo, echo=FALSE, fig.show='hold', out.width="30%", message=FALSE, eval=FALSE}
+You can call the Rust code from R, as illustrated by the code below which generates the figure below.
+
+```{r thresholddemo, fig.show='hold', out.width="30%", message=FALSE}
+remotes::install_github("dabreegster/odjitter", subdir = "r")
 # Note: code to generate the visualisation below
+od = readr::read_csv("data/od.csv")
 zones = sf::read_sf("data/zones.geojson")
 network = sf::read_sf("data/road_network.geojson")
 od_sf = od::od_to_sf(od, zones)
+odjittered_max_50 = odjitter::jitter(od, zones, network, disaggregation_threshold = 50)
+odjittered_max_10 = odjitter::jitter(od, zones, network, disaggregation_threshold = 10)
 plot(zones$geometry, border = "grey")
 plot(network$geometry, col = "red", add = TRUE)
 plot(od_sf$geometry, add = TRUE)
 plot(zones$geometry, border = "grey")
 plot(network$geometry, col = "red", add = TRUE)
-plot(sf::read_sf("output_max50.geojson")$geometry, add = TRUE)
+plot(odjittered_max_50$geometry, add = TRUE)
 plot(zones$geometry, border = "grey")
 plot(network$geometry, col = "red", add = TRUE)
-plot(sf::read_sf("output_max10.geojson")$geometry, add = TRUE)
+plot(odjittered_max_10$geometry, add = TRUE)
 ```
-
-![](https://user-images.githubusercontent.com/1825120/153021585-44cc107e-0183-4cc3-b7e7-0f72c4fd2c01.png)
 
 Note: `odjitter` uses a random number generator to sample points, so the output will change each time you run it, unless you set the `rng-seed`, as documented in the next section.
 

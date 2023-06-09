@@ -199,7 +199,37 @@ the result after setting `disaggregation-threshold` argument to 50, and
 the right hand figure showing the result after setting
 `disaggregation-threshold` to 10.
 
-![](https://user-images.githubusercontent.com/1825120/153021585-44cc107e-0183-4cc3-b7e7-0f72c4fd2c01.png)
+You can call the Rust code from R, as illustrated by the code below
+which generates the figure below.
+
+``` r
+remotes::install_github("dabreegster/odjitter", subdir = "r")
+# Note: code to generate the visualisation below
+od = readr::read_csv("data/od.csv")
+zones = sf::read_sf("data/zones.geojson")
+network = sf::read_sf("data/road_network.geojson")
+od_sf = od::od_to_sf(od, zones)
+odjittered_max_50 = odjitter::jitter(od, zones, network, disaggregation_threshold = 50)
+odjittered_max_10 = odjitter::jitter(od, zones, network, disaggregation_threshold = 10)
+plot(zones$geometry, border = "grey")
+plot(network$geometry, col = "red", add = TRUE)
+plot(od_sf$geometry, add = TRUE)
+plot(zones$geometry, border = "grey")
+plot(network$geometry, col = "red", add = TRUE)
+plot(odjittered_max_50$geometry, add = TRUE)
+plot(zones$geometry, border = "grey")
+plot(network$geometry, col = "red", add = TRUE)
+plot(odjittered_max_10$geometry, add = TRUE)
+```
+
+<img src="README_files/figure-commonmark/thresholddemo-1.png"
+style="width:30.0%" />
+
+<img src="README_files/figure-commonmark/thresholddemo-2.png"
+style="width:30.0%" />
+
+<img src="README_files/figure-commonmark/thresholddemo-3.png"
+style="width:30.0%" />
 
 Note: `odjitter` uses a random number generator to sample points, so the
 output will change each time you run it, unless you set the `rng-seed`,
@@ -295,15 +325,15 @@ rm output_individual.geojson
 ```
 
     {"type":"FeatureCollection", "features":[
-    {"geometry":{"coordinates":[[-3.214880289257255,55.93425814153206],[-3.2061200476469813,55.93653965342566]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2226626753912404,55.92885719038371],[-3.214027671239255,55.93668106269962]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.206085299282606,55.93242540802673],[-3.2105606253211367,55.93297990857682]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2170445136100096,55.930229164773955],[-3.219811418941118,55.9269560297377]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2186515789564445,55.93392174785699],[-3.206706493595633,55.93286576783035]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2118127216180334,55.92910014495392],[-3.2122324264132596,55.933609380961165]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2125552934796704,55.93410981242803],[-3.2192251130719423,55.933695495747365]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.215971191580006,55.92768580509798],[-3.217357048740689,55.93390249158399]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2193767662326658,55.93428313680597],[-3.222990038581186,55.92790597203718]],"type":"LineString"},"properties":{"mode":"all"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2121431668529117,55.933965915371445],[-3.223916127373195,55.92888261962998]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2167988603260174,55.93356606201116],[-3.2182636986173243,55.9358506825516]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2202216321081445,55.93488542736486],[-3.2153135473815344,55.930809465426414]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2222819488804113,55.93032185794016],[-3.218240393587925,55.93313703649942]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2160510192375495,55.929580935293345],[-3.219279025788014,55.92919031658043]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2186945718978253,55.92554797818593],[-3.2173765997628028,55.929156422821684]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.214524577107455,55.93530128670642],[-3.206031426593628,55.933620480695055]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2183881217012753,55.930809450461716],[-3.215442035294158,55.93293881291448]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.219175472182779,55.92578336251042],[-3.2162245682495696,55.92687392202114]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
 
 # Details
 
