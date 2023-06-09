@@ -27,6 +27,7 @@ jitter(
   zones_path = NULL,
   data_dir = tempdir(),
   show_command = FALSE,
+  deduplicate_pairs = TRUE,
   odjitter_location = "odjitter"
 )
 }
@@ -78,6 +79,8 @@ data files will be saved. \code{tempdir()} by default.}
 
 \item{show_command}{Show the command line call for jittering?
 Set to FALSE by default, set it to TRUE for debugging/educational purposes.}
+
+\item{deduplicate_pairs}{Return only unique OD pairs? TRUE by default.}
 }
 \value{
 An \code{sf} object with the jittered result
@@ -117,14 +120,15 @@ plot(od_jittered)
 #   disaggregation_threshold = 50
 # )
 # summary(j_schools)
-\dontrun{
-od_jittered = jitter(
-  od,
-  zones,
-  zones_d = zones_d,
-  subpoints = road_network,
-  disaggregation_threshold = 50,
-  odjitter_location = r"(powershell C:\Users\geoevid\.cargo\bin\odjitter.exe)"
-)
+# \dontrun{
+# od_jittered = jitter(
+#   od,
+#   zones,
+#   zones_d = zones_d,
+#   subpoints = road_network,
+#   disaggregation_threshold = 50,
+#   odjitter_location = r"(powershell C:\Users\geoevid\.cargo\bin\odjitter.exe)"
+# )
+# plot(od_jittered)
 }
 }

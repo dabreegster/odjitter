@@ -4,6 +4,7 @@
 # odjitter R package
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The goal of this {odjitter} R package is to provide an R interface to
@@ -30,7 +31,7 @@ library(odjitter)
 ``` r
 od = readr::read_csv("https://github.com/dabreegster/odjitter/raw/main/data/od.csv")
 #> Rows: 49 Columns: 11
-#> ── Column specification ───────────────────────────────────────────────────────────
+#> ── Column specification ────────────────────────────────────────────────────────
 #> Delimiter: ","
 #> chr (2): geo_code1, geo_code2
 #> dbl (9): all, from_home, train, bus, car_driver, car_passenger, bicycle, foo...
@@ -59,6 +60,44 @@ plot(od_jittered)
 ```
 
 <img src="README_files/figure-gfm/jitter-1.png" width="50%" /><img src="README_files/figure-gfm/jitter-2.png" width="50%" />
+
+## Allowing duplicate OD pairs
+
+By default the `jitter` function will remove duplicate OD pairs. This
+can be disabled by setting `deduplicate_pairs = FALSE`.
+
+``` r
+#  Default behaviour (no duplicates):
+od_jittered = jitter(
+  od,
+  zones,
+  subpoints = road_network,
+  disaggregation_threshold = 1,
+  show_command = TRUE,
+)
+#> command sent to the system:
+#> odjitter jitter --od-csv-path /tmp/RtmpfqvyCC/od.csv --zones-path /tmp/RtmpfqvyCC/zones.geojson --zone-name-key geo_code --origin-key geo_code1 --destination-key geo_code2 --subpoints-origins-path /tmp/RtmpfqvyCC/subpoints.geojson --subpoints-destinations-path /tmp/RtmpfqvyCC/subpoints.geojson --disaggregation-key all --disaggregation-threshold 1 --rng-seed 93708 --deduplicate-pairs  --output-path /tmp/RtmpfqvyCC/od_jittered.geojson
+summary(duplicated(od_jittered$geometry))
+#>    Mode   FALSE 
+#> logical    6555
+```
+
+``` r
+# Larger example:
+od_jittered = jitter(
+  od,
+  zones,
+  subpoints = road_network,
+  disaggregation_threshold = 1,
+  show_command = TRUE,
+  deduplicate_pairs = FALSE
+)
+#> command sent to the system:
+#> odjitter jitter --od-csv-path /tmp/RtmpfqvyCC/od.csv --zones-path /tmp/RtmpfqvyCC/zones.geojson --zone-name-key geo_code --origin-key geo_code1 --destination-key geo_code2 --subpoints-origins-path /tmp/RtmpfqvyCC/subpoints.geojson --subpoints-destinations-path /tmp/RtmpfqvyCC/subpoints.geojson --disaggregation-key all --disaggregation-threshold 1 --rng-seed 28614   --output-path /tmp/RtmpfqvyCC/od_jittered.geojson
+summary(duplicated(od_jittered$geometry))
+#>    Mode   FALSE    TRUE 
+#> logical    6545      10
+```
 
 ## R interface to Rust via rextendr (not currently working)
 

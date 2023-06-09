@@ -26,6 +26,7 @@
 #'   data files will be saved. `tempdir()` by default.
 #' @param show_command Show the command line call for jittering?
 #'   Set to FALSE by default, set it to TRUE for debugging/educational purposes.
+#' @param deduplicate_pairs Return only unique OD pairs? TRUE by default.
 #' @return An `sf` object with the jittered result
 #' @export
 #'
@@ -95,6 +96,7 @@ jitter = function(
     zones_path = NULL,
     data_dir = tempdir(),
     show_command = FALSE,
+    deduplicate_pairs = TRUE,
     odjitter_location = "odjitter"
     ) { 
   installed = odjitter_is_installed(odjitter_location)
@@ -109,6 +111,12 @@ jitter = function(
       "cargo install --git https://github.com/dabreegster/odjitter\n",
       "# You need to have installed cargo"
       )
+  }
+  # Convert deduplicate_pairs to a string:
+  if(deduplicate_pairs) {
+    deduplicate_pairs = "--deduplicate-pairs"
+  } else {
+    deduplicate_pairs = ""
   }
   
   # assigning null variables to appropriate values
@@ -162,6 +170,7 @@ jitter = function(
   --disaggregation-key {disaggregation_key} \\
   --disaggregation-threshold {disaggregation_threshold} \\
   --rng-seed {rng_seed} \\
+  {deduplicate_pairs}  \\
   --output-path {output_path}")
   if(show_command) {
     message("command sent to the system:")
