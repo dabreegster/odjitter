@@ -202,35 +202,20 @@ the right hand figure showing the result after setting
 You can call the Rust code from R, as illustrated by the code below
 which generates the datasets shown in the figures below.
 
-    Using github PAT from envvar GITHUB_PAT
+``` r
+remotes::install_github("dabreegster/odjitter", subdir = "r")
+# Note: code to generate the visualisation below
+od = readr::read_csv("data/od.csv")
+zones = sf::read_sf("data/zones.geojson")
+network = sf::read_sf("data/road_network.geojson")
+od_sf = od::od_to_sf(od, zones)
+odjittered_max_50 = odjitter::jitter(od, zones, network, disaggregation_threshold = 50)
+odjittered_max_10 = odjitter::jitter(od, zones, network, disaggregation_threshold = 10)
+```
 
-    Skipping install of 'odjitter' from a github remote, the SHA1 (b1f2613b) has not changed since last install.
-      Use `force = TRUE` to force installation
-
-    Rows: 49 Columns: 11
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr (2): geo_code1, geo_code2
-    dbl (9): all, from_home, train, bus, car_driver, car_passenger, bicycle, foo...
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    0 origins with no match in zone ids
-
-    0 destinations with no match in zone ids
-
-     points not in od data removed.
-
-![No jittering](README_files/figure-commonmark/thresholddemo-1.png)
-
-![Jittering (disaggregation threshold =
-50)](README_files/figure-commonmark/thresholddemo-2.png)
-
-![Jittering (disaggregation threshold =
-10)](README_files/figure-commonmark/thresholddemo-3.png)
-
-Demonstration of the effect of the disaggregation threshold on the
-number of desire lines
+![Demonstration of the effect of the disaggregation threshold on the
+number of desire
+lines](README_files/figure-commonmark/thresholddemo-1.png)
 
 Note: `odjitter` uses a random number generator to sample points, so the
 output will change each time you run it, unless you set the `rng-seed`,
@@ -326,15 +311,15 @@ rm output_individual.geojson
 ```
 
     {"type":"FeatureCollection", "features":[
-    {"geometry":{"coordinates":[[-3.21416368669949,55.9309827586199],[-3.2263326436893918,55.927723073778026]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.227001139167081,55.92766804325966],[-3.2194207444715954,55.92998818093757]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2054111902687707,55.93541242980169],[-3.211010425717299,55.93152771970929]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2239760422292054,55.926355044794214],[-3.2135721438925335,55.93547217675702]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.222060095919582,55.927904409736485],[-3.2056249817028504,55.93553216059438]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2168546484580856,55.93002096157258],[-3.2082938843254154,55.93638220059829]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2152276270518354,55.93417287595912],[-3.205316234269755,55.933732740978506]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.219753180030244,55.930832057050814],[-3.217472892979611,55.929650145795925]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2188013128070234,55.92702164678018],[-3.2091869594223295,55.93204849391639]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2263977926488985,55.92783397974489],[-3.2097949190090564,55.931894382403456]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.214452310499139,55.926362026835776],[-3.2099011140196207,55.93444441681924]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2135400698085235,55.93035182421444],[-3.2244453899330097,55.9290303580713]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.226151458277428,55.92976711232548],[-3.213318278973036,55.93497592560621]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2185705494212358,55.926226845455034],[-3.2115019430114167,55.93197469392582]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2064406813843465,55.93266248325375],[-3.2190062133419635,55.92613966571992]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.226009373785913,55.9285088488262],[-3.2149550551179176,55.93495382922043]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2152401192504443,55.932554427847144],[-3.214478335328521,55.933957525733355]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.218021802161658,55.92963564155289],[-3.22510485680737,55.92984949438051]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
 
 # Details
 

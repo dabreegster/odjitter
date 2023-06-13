@@ -110,8 +110,8 @@ The figure below shows the output of the `jitter` commands above visually, with 
 
 You can call the Rust code from R, as illustrated by the code below which generates the datasets shown in the figures below.
 
-```{r}
-#| echo: false
+```{r, message=FALSE}
+#| echo: true
 remotes::install_github("dabreegster/odjitter", subdir = "r")
 # Note: code to generate the visualisation below
 od = readr::read_csv("data/od.csv")
@@ -122,23 +122,25 @@ odjittered_max_50 = odjitter::jitter(od, zones, network, disaggregation_threshol
 odjittered_max_10 = odjitter::jitter(od, zones, network, disaggregation_threshold = 10)
 ```
 
-```{r}
+```{r fig.width=8, fig.height=2, message=FALSE}
 #| echo: false
 #| label: thresholddemo
 #| fig-cap: "Demonstration of the effect of the disaggregation threshold on the number of desire lines"
-#| fig-subcap: 
-#|   - "No jittering"
-#|   - "Jittering (disaggregation threshold = 50)"
-#|   - "Jittering (disaggregation threshold = 10)"
-plot(zones$geometry, border = "grey")
-plot(network$geometry, col = "red", add = TRUE)
-plot(od_sf$geometry, add = TRUE)
-plot(zones$geometry, border = "grey")
-plot(network$geometry, col = "red", add = TRUE)
-plot(odjittered_max_50$geometry, add = TRUE)
-plot(zones$geometry, border = "grey")
-plot(network$geometry, col = "red", add = TRUE)
-plot(odjittered_max_10$geometry, add = TRUE)
+library(ggplot2)
+odjittered_long = rbind(
+  od_sf |> dplyr::transmute(type = "Unjittered"),
+  odjittered_max_50 |> dplyr::transmute(type = "--disaggregation-threshold 50"),
+  odjittered_max_10 |> dplyr::transmute(type = "--disaggregation-threshold 10")
+)
+# Convert type to ordered factor so that it is plotted in the correct order:
+odjittered_long$type = factor(odjittered_long$type, levels = c("Unjittered", "--disaggregation-threshold 50", "--disaggregation-threshold 10"))
+odjittered_long |>
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = zones, fill = NA, color = "grey") +
+  geom_sf(data = network, fill = NA, color = "red") +
+  facet_wrap(~type) +
+  theme_void()
 ```
 
 Note: `odjitter` uses a random number generator to sample points, so the output will change each time you run it, unless you set the `rng-seed`, as documented in the next section.
