@@ -2,23 +2,31 @@
 # odjitter
 
 This repo contains the `odjitter` crate that implements a ‘jittering’
-technique for pre-processing origin-destination (OD) data, and
-interfaces to R (see the [r](r/) subdirectory) and possibly other
-languages in the future.
+technique for pre-processing origin-destination (OD) data and an
+associated R interface package (see the [r](r/) subdirectory). We hope
+to support other languages in the future (see [issue
+\#23](https://github.com/dabreegster/odjitter/issues/23)).
 
-Jittering takes aggregate OD data plus zones and geographic datasets
-representing trip start and end points. The output is geographic lines
-representing movement between the zones that can be stored as GeoJSON
-files. The name comes from jittering in a [data visualisation
+## What is jittering?
+
+Jittering is a method that takes OD data in a .csv file plus zones and
+geographic datasets representing trip start and end points in .geojson
+files and outputs geographic lines representing movement between the
+zones that can be stored as GeoJSON files. The name comes from jittering
+in a [data visualisation
 context](https://ggplot2-book.org/layers.html?q=noise#position), which
 refers to the addition of random noise to the location of points,
 preventing them overlapping.
 
-In the context of OD data jittering refers to randomly moving start and
-end points associated with OD pairs, as described in an under review
-paper on the subject (Lovelace et al. under review). The crate is still
-a work in progress: the API may change. Issues and pull requests are
-particularly useful at this stage.
+## Why jitter?
+
+For a more detailed description of the method and an explanation of why
+it is useful, especially when modeling active modes that require dense
+active travel networks, see the paper [Jittering: A Computationally
+Efficient Method for Generating Realistic Route Networks from
+Origin-Destination
+Data](https://findingspress.org/article/33873-jittering-a-computationally-efficient-method-for-generating-realistic-route-networks-from-origin-destination-data)
+(Lovelace, Félix, and Carlino 2022).
 
 # Installation
 
@@ -52,7 +60,7 @@ odjitter
 
     SUBCOMMANDS:
         disaggregate    Fully disaggregate input desire lines into output representing one trip
-                        each, with a `mode` column
+                            each, with a `mode` column
         help            Print this message or the help of the given subcommand(s)
         jitter          Import raw data and build an activity model for a region
 
@@ -191,7 +199,38 @@ the result after setting `disaggregation-threshold` argument to 50, and
 the right hand figure showing the result after setting
 `disaggregation-threshold` to 10.
 
-![](https://user-images.githubusercontent.com/1825120/153021585-44cc107e-0183-4cc3-b7e7-0f72c4fd2c01.png)
+You can call the Rust code from R, as illustrated by the code below
+which generates the datasets shown in the figures below.
+
+    Using github PAT from envvar GITHUB_PAT
+
+    Skipping install of 'odjitter' from a github remote, the SHA1 (b1f2613b) has not changed since last install.
+      Use `force = TRUE` to force installation
+
+    Rows: 49 Columns: 11
+    ── Column specification ────────────────────────────────────────────────────────
+    Delimiter: ","
+    chr (2): geo_code1, geo_code2
+    dbl (9): all, from_home, train, bus, car_driver, car_passenger, bicycle, foo...
+
+    ℹ Use `spec()` to retrieve the full column specification for this data.
+    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    0 origins with no match in zone ids
+
+    0 destinations with no match in zone ids
+
+     points not in od data removed.
+
+![No jittering](README_files/figure-commonmark/thresholddemo-1.png)
+
+![Jittering (disaggregation threshold =
+50)](README_files/figure-commonmark/thresholddemo-2.png)
+
+![Jittering (disaggregation threshold =
+10)](README_files/figure-commonmark/thresholddemo-3.png)
+
+Demonstration of the effect of the disaggregation threshold on the
+number of desire lines
 
 Note: `odjitter` uses a random number generator to sample points, so the
 output will change each time you run it, unless you set the `rng-seed`,
@@ -287,15 +326,15 @@ rm output_individual.geojson
 ```
 
     {"type":"FeatureCollection", "features":[
-    {"geometry":{"coordinates":[[-3.2167615959448037,55.929814462995964],[-3.2063658495301435,55.93748013348288]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2207976691512132,55.926517311561824],[-3.2163721271829604,55.929340999141296]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2124438686257455,55.931475640356766],[-3.2132061872239674,55.93043362079047]],"type":"LineString"},"properties":{"mode":"bus"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.216879121659801,55.92611018924906],[-3.212262315024418,55.93353745612964]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.205643229896961,55.93586750040956],[-3.215375104201711,55.930062503460746]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.21850947912481,55.934143973311045],[-3.219650612053624,55.9331208172091]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2157729162037625,55.93408969218749],[-3.2144164757015212,55.9317199557622]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.213363817441356,55.93048504735792],[-3.2101571607060206,55.93194587249084]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
-    {"geometry":{"coordinates":[[-3.2194088505941254,55.93505177694654],[-3.204425024057752,55.932575858591534]],"type":"LineString"},"properties":{"mode":"car_driver"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.21416368669949,55.9309827586199],[-3.2263326436893918,55.927723073778026]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.227001139167081,55.92766804325966],[-3.2194207444715954,55.92998818093757]],"type":"LineString"},"properties":{"mode":"bicycle"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2054111902687707,55.93541242980169],[-3.211010425717299,55.93152771970929]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2239760422292054,55.926355044794214],[-3.2135721438925335,55.93547217675702]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.222060095919582,55.927904409736485],[-3.2056249817028504,55.93553216059438]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2168546484580856,55.93002096157258],[-3.2082938843254154,55.93638220059829]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2152276270518354,55.93417287595912],[-3.205316234269755,55.933732740978506]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.219753180030244,55.930832057050814],[-3.217472892979611,55.929650145795925]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
+    {"geometry":{"coordinates":[[-3.2188013128070234,55.92702164678018],[-3.2091869594223295,55.93204849391639]],"type":"LineString"},"properties":{"mode":"foot"},"type":"Feature"},
 
 # Details
 
@@ -314,6 +353,11 @@ odjitter disaggregate --help
         odjitter jitter [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH> --disaggregation-threshold <DISAGGREGATION_THRESHOLD>
 
     OPTIONS:
+            --deduplicate-pairs
+                Prevent duplicate (origin, destination) pairs from appearing in the output. This may
+                increase memory and runtime requirements. Note the duplication uses the floating point
+                precision of the input data, and only consider geometry (not any properties)
+
             --destination-key <DESTINATION_KEY>
                 Which column in the OD row specifies the zone where trips ends? [default: geo_code2]
 
@@ -379,6 +423,11 @@ odjitter disaggregate --help
         odjitter disaggregate [OPTIONS] --od-csv-path <OD_CSV_PATH> --zones-path <ZONES_PATH> --output-path <OUTPUT_PATH>
 
     OPTIONS:
+            --deduplicate-pairs
+                Prevent duplicate (origin, destination) pairs from appearing in the output. This may
+                increase memory and runtime requirements. Note the duplication uses the floating point
+                precision of the input data, and only consider geometry (not any properties)
+
             --destination-key <DESTINATION_KEY>
                 Which column in the OD row specifies the zone where trips ends? [default: geo_code2]
 
@@ -439,6 +488,15 @@ around 1000 times faster than the R implementation.
 
 # References
 
-Lovelace, Robin, Rosa Félix, and Dustin Carlino Under Review Jittering:
-A Computationally Efficient Method for Generating Realistic Route
-Networks from Origin-Destination Data. TBC.
+<div id="refs" class="references csl-bib-body hanging-indent">
+
+<div id="ref-lovelace_jittering_2022b" class="csl-entry">
+
+Lovelace, Robin, Rosa Félix, and Dustin Carlino. 2022. “Jittering: A
+Computationally Efficient Method for Generating Realistic Route Networks
+from Origin-Destination Data.” *Findings*, April, 33873.
+<https://doi.org/10.32866/001c.33873>.
+
+</div>
+
+</div>
