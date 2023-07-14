@@ -379,9 +379,10 @@ pub fn load_zones(
             {
                 let gj_geom: geojson::Geometry = feature.geometry.unwrap();
                 let geo_geometry: geo_types::Geometry<f64> = gj_geom.try_into().unwrap();
-                // TODO Support polygons too
                 if let geo_types::Geometry::MultiPolygon(mp) = geo_geometry {
                     zones.insert(zone_name, mp);
+                } else if let geo_types::Geometry::Polygon(p) = geo_geometry {
+                    zones.insert(zone_name, p.into());
                 }
             } else {
                 bail!(
