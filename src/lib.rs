@@ -304,11 +304,20 @@ pub fn disaggregate<P: AsRef<Path>, W: Write>(
                 options.destination_key
             );
         };
-        let origin_sampler =
-            Subsampler::new(&points_per_origin_zone, &zones[&origin_id], &origin_id)?;
+        let origin_zone = if let Some(zone) = zones.get(&origin_id) {
+            zone
+        } else {
+            bail!("Unknown origin zone {origin_id}");
+        };
+        let destination_zone = if let Some(zone) = zones.get(&destination_id) {
+            zone
+        } else {
+            bail!("Unknown destination zone {destination_id}");
+        };
+        let origin_sampler = Subsampler::new(&points_per_origin_zone, origin_zone, &origin_id)?;
         let destination_sampler = Subsampler::new(
             &points_per_destination_zone,
-            &zones[&destination_id],
+            destination_zone,
             &destination_id,
         )?;
 
