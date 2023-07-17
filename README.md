@@ -70,6 +70,12 @@ these commands is that `jitter` returns OD pairs representing multiple
 trips or fractions of a trip. `disaggregate`, by contrast, returns data
 representing single trips.
 
+## Docker
+
+Alternatively, you can run through Docker: `docker run -t abstreet/odjitter <CMD>`. See below for command line usage, or start with `help`.
+
+(For maintainers only: to build and push a new version, `docker build -t odjitter . && docker tag odjitter abstreet/odjitter:latest && docker push abstreet/odjitter:latest`.)
+
 # `jitter` OD data
 
 To jitter OD data you need a minimum of three inputs, examples of which
