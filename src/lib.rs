@@ -207,6 +207,17 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
             destination_id,
         )?;
 
+        if options.deduplicate_pairs {
+            if let (Some(num_origin), Some(num_destination)) = (
+                origin_sampler.num_points(),
+                destination_sampler.num_points(),
+            ) {
+                if repeat as usize > num_origin * num_destination {
+                    bail!("{repeat} unique pairs requested from {origin_id} ({num_origin} subpoints) to {destination_id} ({num_destination} subpoints), but this is impossible");
+                }
+            }
+        }
+
         for _ in 0..repeat as usize {
             loop {
                 let o = origin_sampler.sample(rng);
@@ -327,7 +338,20 @@ pub fn disaggregate<P: AsRef<Path>, W: Write>(
         for (mode, value) in string_map {
             if let Ok(count) = value.parse::<f64>() {
                 // TODO How should we treat fractional input?
-                for _ in 0..count as usize {
+                let count = count as usize;
+
+                if options.deduplicate_pairs {
+                    if let (Some(num_origin), Some(num_destination)) = (
+                        origin_sampler.num_points(),
+                        destination_sampler.num_points(),
+                    ) {
+                        if count > num_origin * num_destination {
+                            bail!("{count} unique pairs requested for {mode} from {origin_id} ({num_origin} subpoints) to {destination_id} ({num_destination} subpoints), but this is impossible");
+                        }
+                    }
+                }
+
+                for _ in 0..count {
                     loop {
                         let o = origin_sampler.sample(rng);
                         let d = destination_sampler.sample(rng);
@@ -478,6 +502,15 @@ impl<'a> Subsampler<'a> {
                 // attempts?
                 points.choose_weighted(rng, |pt| pt.weight).unwrap().point
             }
+        }
+    }
+
+    /// No result for random points in a polygon (infinite, unless the polygon is extremely
+    /// degenerate). For weighted points, returns the number of them.
+    fn num_points(&self) -> Option<usize> {
+        match self {
+            Subsampler::RandomPoints(_, _) => None,
+            Subsampler::WeightedPoints(points) => Some(points.len()),
         }
     }
 }
