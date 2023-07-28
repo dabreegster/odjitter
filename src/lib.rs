@@ -8,7 +8,6 @@ mod scrape;
 mod tests;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::io::Write;
 use std::path::Path;
 
 use anyhow::{bail, Result};
@@ -26,11 +25,6 @@ use rstar::{RTree, RTreeObject, AABB};
 use serde_json::{Map, Value};
 
 pub use self::scrape::scrape_points;
-
-// TODO Use bufreaders/writers (but measure perf first)
-
-// TODO Docs
-// TODO Setup github builds
 
 pub struct Options {
     /// How to pick points from origin zones
@@ -90,7 +84,7 @@ impl RTreeObject for WeightedPoint {
 /// repeated 20 times. Each time, the origin and destination will be transformed from the entire
 /// zone to a specific point within the zone, determined using the specified `Subsample`.
 ///
-/// The output is written as GeoJSON to the provided writer.
+/// The output LineStrings are provided by callback.
 ///
 /// Note this assumes assumes all input is in the WGS84 coordinate system, and uses the Haversine
 /// formula to calculate distances.
@@ -103,14 +97,14 @@ impl RTreeObject for WeightedPoint {
 ///   but each output row obeys this maximum.
 /// * `disaggregation_key` - Which column in the OD row specifies the total number of trips to
 ///   disaggregate?
-pub fn jitter<P: AsRef<Path>, W: Write>(
+pub fn jitter<P: AsRef<Path>, F: FnMut(Feature) -> Result<()>>(
     csv_path: P,
     zones: &HashMap<String, MultiPolygon<f64>>,
     disaggregation_threshold: usize,
     disaggregation_key: String,
     rng: &mut StdRng,
     options: Options,
-    mut writer: W,
+    mut output: F,
 ) -> Result<()> {
     // TODO Don't allow disaggregation_threshold to be 0
     let csv_path = csv_path.as_ref();
@@ -127,11 +121,6 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
         } else {
             None
         };
-
-    // Manually write GeoJSON, so we can write per feature, instead of collecting the whole
-    // FeatureCollection in memory
-    writeln!(writer, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
-    let mut add_comma = false;
 
     let mut seen_pairs: HashSet<ODPair> = HashSet::new();
 
@@ -232,18 +221,12 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
                         }
                     }
 
-                    if add_comma {
-                        writeln!(writer, ",")?;
-                    } else {
-                        add_comma = true;
-                    }
-                    serde_json::to_writer(&mut writer, &to_geojson(o, d, json_map.clone()))?;
+                    output(to_geojson(o, d, json_map.clone()))?;
                     break;
                 }
             }
         }
     }
-    writeln!(writer, "]}}")?;
     Ok(())
 }
 
@@ -257,17 +240,17 @@ pub fn jitter<P: AsRef<Path>, W: Write>(
 /// Each input row is repeated some number of times, based on the counts in each mode column. The
 /// output will have a new `mode` column set to that.
 ///
-/// The output is written as GeoJSON to the provided writer.
+/// The output LineStrings are provided by callback.
 ///
 /// Note this assumes assumes all input is in the WGS84 coordinate system, and uses the Haversine
 /// formula to calculate distances.
 ///
-pub fn disaggregate<P: AsRef<Path>, W: Write>(
+pub fn disaggregate<P: AsRef<Path>, F: FnMut(Feature) -> Result<()>>(
     csv_path: P,
     zones: &HashMap<String, MultiPolygon<f64>>,
     rng: &mut StdRng,
     options: Options,
-    mut writer: W,
+    mut output: F,
 ) -> Result<()> {
     let csv_path = csv_path.as_ref();
 
@@ -283,11 +266,6 @@ pub fn disaggregate<P: AsRef<Path>, W: Write>(
         } else {
             None
         };
-
-    // Manually write GeoJSON, so we can write per feature, instead of collecting the whole
-    // FeatureCollection in memory
-    writeln!(writer, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
-    let mut add_comma = false;
 
     println!("Disaggregating OD data");
     for rec in csv::Reader::from_reader(File::open(csv_path)?).deserialize() {
@@ -365,14 +343,9 @@ pub fn disaggregate<P: AsRef<Path>, W: Write>(
                                 }
                             }
 
-                            if add_comma {
-                                writeln!(writer, ",")?;
-                            } else {
-                                add_comma = true;
-                            }
                             let mut json_map: Map<String, Value> = Map::new();
                             json_map.insert("mode".to_string(), Value::String(mode.clone()));
-                            serde_json::to_writer(&mut writer, &to_geojson(o, d, json_map))?;
+                            output(to_geojson(o, d, json_map))?;
                             break;
                         }
                     }
@@ -380,7 +353,6 @@ pub fn disaggregate<P: AsRef<Path>, W: Write>(
             }
         }
     }
-    writeln!(writer, "]}}")?;
     Ok(())
 }
 
