@@ -122,8 +122,7 @@ fn main() -> Result<()> {
         let write_feature = |feature| {
             // TODO Is there a cheaper way to make a GeozeroDatasource, or something else we should
             // generate from the API?
-            let _ =
-                fgb.add_feature(geozero::geojson::GeoJson(&serde_json::to_string(&feature)?))?;
+            fgb.add_feature(geozero::geojson::GeoJson(&serde_json::to_string(&feature)?))?;
             Ok(())
         };
         run(args, common, write_feature)?;
