@@ -49,9 +49,13 @@ struct CommonArgs {
     #[clap(long)]
     zones_path: String,
 
-    /// The path to a GeoJSON file where the output will be written
+    /// The path to a file where the output will be written
     #[clap(long)]
     output_path: String,
+
+    /// Output a FlatGeobuf file (without an index) if true, or a GeoJSON file by default
+    #[clap(long)]
+    output_fgb: bool,
 
     /// The path to a GeoJSON file to use for sampling subpoints for origin zones. If this isn't
     /// specified, random points within each zone will be used instead.
@@ -104,7 +108,59 @@ fn main() -> Result<()> {
         Action::Jitter { ref common, .. } => common.clone(),
         Action::Disaggregate { ref common, .. } => common.clone(),
     };
+    let output_path = common.output_path.clone();
 
+    if common.output_fgb {
+        let mut fgb = flatgeobuf::FgbWriter::create_with_options(
+            "odjitter",
+            flatgeobuf::GeometryType::LineString,
+            flatgeobuf::FgbWriterOptions {
+                write_index: false,
+                ..Default::default()
+            },
+        )?;
+        let write_feature = |feature| {
+            // TODO Is there a cheaper way to make a GeozeroDatasource, or something else we should
+            // generate from the API?
+            let _ =
+                fgb.add_feature(geozero::geojson::GeoJson(&serde_json::to_string(&feature)?))?;
+            Ok(())
+        };
+        run(args, common, write_feature)?;
+        println!("Writing {output_path}");
+        let mut file = std::io::BufWriter::new(File::create(&output_path)?);
+        fgb.write(&mut file)?;
+    } else {
+        // Write GeoJSON to a file. Instead of collecting the whole FeatureCollection in memory, write
+        // each feature as we get it.
+        let mut file = std::io::BufWriter::new(File::create(&output_path)?);
+        writeln!(file, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
+        let mut add_comma = false;
+        let write_feature = |feature| {
+            if add_comma {
+                writeln!(file, ",")?;
+            } else {
+                add_comma = true;
+            }
+            serde_json::to_writer(&mut file, &feature)?;
+            Ok(())
+        };
+
+        run(args, common, write_feature)?;
+
+        // Finish off the FeatureCollection
+        writeln!(file, "]}}")?;
+    }
+
+    println!("Wrote {output_path}");
+    Ok(())
+}
+
+fn run<F: FnMut(geojson::Feature) -> Result<()>>(
+    args: Args,
+    common: CommonArgs,
+    write_feature: F,
+) -> Result<()> {
     let zones = odjitter::load_zones(&common.zones_path, &common.zone_name_key)?;
     println!("Scraped {} zones from {}", zones.len(), common.zones_path);
 
@@ -137,21 +193,6 @@ fn main() -> Result<()> {
         StdRng::from_entropy()
     };
 
-    // Write GeoJSON to a file. Instead of collecting the whole FeatureCollection in memory, write
-    // each feature as we get it.
-    let mut file = std::io::BufWriter::new(File::create(&common.output_path)?);
-    writeln!(file, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
-    let mut add_comma = false;
-    let write_feature = |feature| {
-        if add_comma {
-            writeln!(file, ",")?;
-        } else {
-            add_comma = true;
-        }
-        serde_json::to_writer(&mut file, &feature)?;
-        Ok(())
-    };
-
     match args.action {
         Action::Jitter {
             disaggregation_threshold,
@@ -172,10 +213,5 @@ fn main() -> Result<()> {
             odjitter::disaggregate(common.od_csv_path, &zones, &mut rng, options, write_feature)?;
         }
     }
-
-    // Finish off the FeatureCollection
-    writeln!(file, "]}}")?;
-    println!("Wrote {}", common.output_path);
-
     Ok(())
 }
