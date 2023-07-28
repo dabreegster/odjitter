@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use anyhow::Result;
 use clap::Parser;
 use fs_err::File;
@@ -135,7 +137,20 @@ fn main() -> Result<()> {
         StdRng::from_entropy()
     };
 
+    // Write GeoJSON to a file. Instead of collecting the whole FeatureCollection in memory, write
+    // each feature as we get it.
     let mut file = std::io::BufWriter::new(File::create(&common.output_path)?);
+    writeln!(file, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
+    let mut add_comma = false;
+    let write_feature = |feature| {
+        if add_comma {
+            writeln!(file, ",")?;
+        } else {
+            add_comma = true;
+        }
+        serde_json::to_writer(&mut file, &feature)?;
+        Ok(())
+    };
 
     match args.action {
         Action::Jitter {
@@ -150,13 +165,16 @@ fn main() -> Result<()> {
                 disaggregation_key,
                 &mut rng,
                 options,
-                &mut file,
+                write_feature,
             )?;
         }
         Action::Disaggregate { .. } => {
-            odjitter::disaggregate(common.od_csv_path, &zones, &mut rng, options, &mut file)?;
+            odjitter::disaggregate(common.od_csv_path, &zones, &mut rng, options, write_feature)?;
         }
     }
+
+    // Finish off the FeatureCollection
+    writeln!(file, "]}}")?;
     println!("Wrote {}", common.output_path);
 
     Ok(())

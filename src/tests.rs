@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use geo_types::Point;
-use geojson::GeoJson;
+use geojson::Feature;
 use ordered_float::NotNan;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -25,7 +25,7 @@ fn test_sums_match() {
             deduplicate_pairs: false,
         };
         let mut rng = StdRng::seed_from_u64(42);
-        let mut raw_output = Vec::new();
+        let mut output = Vec::new();
         let disaggregation_key = "all".to_string();
         jitter(
             "data/od.csv",
@@ -34,13 +34,12 @@ fn test_sums_match() {
             disaggregation_key,
             &mut rng,
             options,
-            &mut raw_output,
+            |feature| {
+                output.push(feature);
+                Ok(())
+            },
         )
         .unwrap();
-        let output = String::from_utf8(raw_output)
-            .unwrap()
-            .parse::<GeoJson>()
-            .unwrap();
 
         for (column, input_sum) in &input_sums {
             let input_sum = *input_sum;
@@ -80,7 +79,7 @@ fn test_different_subpoints() {
     let disaggregation_threshold = 1;
     let disaggregation_key = "walk".to_string();
     let mut rng = StdRng::seed_from_u64(42);
-    let mut raw_output = Vec::new();
+    let mut output = Vec::new();
     jitter(
         "data/od_schools.csv",
         &zones,
@@ -88,33 +87,28 @@ fn test_different_subpoints() {
         disaggregation_key,
         &mut rng,
         options,
-        &mut raw_output,
+        |feature| {
+            output.push(feature);
+            Ok(())
+        },
     )
     .unwrap();
-    let output = String::from_utf8(raw_output)
-        .unwrap()
-        .parse::<GeoJson>()
-        .unwrap();
 
     // Verify that all destinations match one of the schools
-    if let GeoJson::FeatureCollection(ref fc) = output {
-        for feature in &fc.features {
-            if let Some(geojson::Value::LineString(ls)) =
-                feature.geometry.as_ref().map(|geom| &geom.value)
-            {
-                let pt = ls.last().unwrap();
-                if !schools.contains(&hashify_point(Point::new(pt[0], pt[1]))) {
-                    panic!(
-                        "An output feature doesn't end at a school subpoint: {:?}",
-                        feature
-                    );
-                }
-            } else {
-                panic!("Output geometry isn't a LineString: {:?}", feature.geometry);
+    for feature in &output {
+        if let Some(geojson::Value::LineString(ls)) =
+            feature.geometry.as_ref().map(|geom| &geom.value)
+        {
+            let pt = ls.last().unwrap();
+            if !schools.contains(&hashify_point(Point::new(pt[0], pt[1]))) {
+                panic!(
+                    "An output feature doesn't end at a school subpoint: {:?}",
+                    feature
+                );
             }
+        } else {
+            panic!("Output geometry isn't a LineString: {:?}", feature.geometry);
         }
-    } else {
-        panic!("Output isn't a FeatureCollection: {:?}", output);
     }
 
     // Also make sure sums match, so rows are preserved properly. This input data has 0 for some
@@ -145,27 +139,25 @@ fn test_disaggregate() {
         deduplicate_pairs: false,
     };
     let mut rng = StdRng::seed_from_u64(42);
-    let mut raw_output = Vec::new();
-    disaggregate("data/od.csv", &zones, &mut rng, options, &mut raw_output).unwrap();
-    let output = String::from_utf8(raw_output)
-        .unwrap()
-        .parse::<GeoJson>()
-        .unwrap();
+    let mut output = Vec::new();
+    disaggregate("data/od.csv", &zones, &mut rng, options, |feature| {
+        output.push(feature);
+        Ok(())
+    })
+    .unwrap();
 
     // Note "all" has no special meaning to the disaggregate call. The user should probably remove
     // it from the input or ignore it in the output.
     let input_sums = sum_trips_input("data/od.csv", &["all", "car_driver", "foot"]);
     let mut sums_per_mode: HashMap<String, usize> = HashMap::new();
-    if let GeoJson::FeatureCollection(ref fc) = output {
-        for feature in &fc.features {
-            let mode = feature
-                .property("mode")
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .to_string();
-            *sums_per_mode.entry(mode).or_insert(0) += 1;
-        }
+    for feature in output {
+        let mode = feature
+            .property("mode")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        *sums_per_mode.entry(mode).or_insert(0) += 1;
     }
     for (mode, input_sum) in input_sums {
         let output_sum = sums_per_mode[&mode];
@@ -194,7 +186,7 @@ fn test_deduplicate_pairs() {
             deduplicate_pairs,
         };
         let mut rng = StdRng::seed_from_u64(42);
-        let mut raw_output = Vec::new();
+        let mut output = Vec::new();
         let disaggregation_threshold = 1;
         let disaggregation_key = "all".to_string();
         jitter(
@@ -204,39 +196,36 @@ fn test_deduplicate_pairs() {
             disaggregation_key,
             &mut rng,
             options,
-            &mut raw_output,
+            |feature| {
+                output.push(feature);
+                Ok(())
+            },
         )
         .unwrap();
-        let output = String::from_utf8(raw_output)
-            .unwrap()
-            .parse::<GeoJson>()
-            .unwrap();
 
-        if let GeoJson::FeatureCollection(ref fc) = output {
-            let mut unique_pairs: HashSet<Vec<NotNan<f64>>> = HashSet::new();
+        let mut unique_pairs: HashSet<Vec<NotNan<f64>>> = HashSet::new();
 
-            for feature in &fc.features {
-                if let Some(geojson::Value::LineString(ls)) =
-                    feature.geometry.as_ref().map(|geom| &geom.value)
-                {
-                    unique_pairs.insert(
-                        ls.iter()
-                            .flatten()
-                            .map(|x| NotNan::new(*x).unwrap())
-                            .collect(),
-                    );
-                }
-            }
-
-            let anything_deduped = fc.features.len() != unique_pairs.len();
-            if anything_deduped == deduplicate_pairs {
-                panic!(
-                    "With deduplicate_pairs={}, we got {} LineStrings, with {} unique geometries",
-                    deduplicate_pairs,
-                    fc.features.len(),
-                    unique_pairs.len()
+        for feature in &output {
+            if let Some(geojson::Value::LineString(ls)) =
+                feature.geometry.as_ref().map(|geom| &geom.value)
+            {
+                unique_pairs.insert(
+                    ls.iter()
+                        .flatten()
+                        .map(|x| NotNan::new(*x).unwrap())
+                        .collect(),
                 );
             }
+        }
+
+        let anything_deduped = output.len() != unique_pairs.len();
+        if anything_deduped == deduplicate_pairs {
+            panic!(
+                "With deduplicate_pairs={}, we got {} LineStrings, with {} unique geometries",
+                deduplicate_pairs,
+                output.len(),
+                unique_pairs.len()
+            );
         }
     }
 }
@@ -262,16 +251,14 @@ fn sum_trips_input(csv_path: &str, keys: &[&str]) -> HashMap<String, f64> {
 }
 
 // TODO Refactor helpers -- probably also return a HashMap here
-fn sum_trips_output(gj: &GeoJson, disaggregation_key: &str) -> f64 {
+fn sum_trips_output(features: &[Feature], disaggregation_key: &str) -> f64 {
     let mut total = 0.0;
-    if let GeoJson::FeatureCollection(fc) = gj {
-        for feature in &fc.features {
-            total += feature
-                .property(disaggregation_key)
-                .unwrap()
-                .as_f64()
-                .unwrap();
-        }
+    for feature in features {
+        total += feature
+            .property(disaggregation_key)
+            .unwrap()
+            .as_f64()
+            .unwrap();
     }
     total
 }
