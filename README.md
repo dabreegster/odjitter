@@ -74,6 +74,8 @@ representing single trips.
 
 Alternatively, you can run through Docker: `docker run -t abstreet/odjitter <CMD>`. See below for command line usage, or start with `help`.
 
+NOTE: There's no maintenance guarantee the Docker image has up-to-date changes from this repository. File an issue if you think the Docker version is out-of-date and you need something newer.
+
 (For maintainers only: to build and push a new version, `docker build -t odjitter . && docker tag odjitter abstreet/odjitter:latest && docker push abstreet/odjitter:latest`.)
 
 # `jitter` OD data
