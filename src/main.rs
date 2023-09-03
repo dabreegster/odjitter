@@ -1,8 +1,9 @@
-use std::io::Write;
+use std::io::BufWriter;
 
 use anyhow::Result;
 use clap::Parser;
 use fs_err::File;
+use geojson::FeatureWriter;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
@@ -132,23 +133,13 @@ fn main() -> Result<()> {
     } else {
         // Write GeoJSON to a file. Instead of collecting the whole FeatureCollection in memory, write
         // each feature as we get it.
-        let mut file = std::io::BufWriter::new(File::create(&output_path)?);
-        writeln!(file, "{{\"type\":\"FeatureCollection\", \"features\":[")?;
-        let mut add_comma = false;
+        let mut writer = FeatureWriter::from_writer(BufWriter::new(File::create(&output_path)?));
         let write_feature = |feature| {
-            if add_comma {
-                writeln!(file, ",")?;
-            } else {
-                add_comma = true;
-            }
-            serde_json::to_writer(&mut file, &feature)?;
+            writer.write_feature(&feature)?;
             Ok(())
         };
 
         run(args, common, write_feature)?;
-
-        // Finish off the FeatureCollection
-        writeln!(file, "]}}")?;
     }
 
     println!("Wrote {output_path}");
