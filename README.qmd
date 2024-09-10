@@ -10,6 +10,8 @@ Rscript -e 'rmarkdown::render("README.Rmd")'
 
 # odjitter
 
+NOTE: This project is deprecated. Please use [od2net](https://github.com/Urban-Analytics-Technology-Platform/od2net) directly to generate route networks from OD data.
+
 This repo contains the `odjitter` crate that implements a 'jittering' technique for pre-processing origin-destination (OD) data and an associated R interface package (see the [r](r/) subdirectory).
 We hope to support other languages in the future (see [issue #23](https://github.com/dabreegster/odjitter/issues/23)).
 
