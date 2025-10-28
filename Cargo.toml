@@ -13,11 +13,14 @@ anyhow = "1.0.72"
 clap = { version = "3.0.0", features = ["derive"] }
 # TODO Separate library/binary dependencies
 csv = "1.2.2"
+# Exact versions pinned to fix cargo install issues (see Issue #52)
+# flatgeobuf 3.27.0+ has breaking changes with geozero compatibility
 flatgeobuf = { version = "=3.26.1", default-features = false }
 fs-err = "2.9.0"
 geo = "0.26.0"
 geo-types = "0.7.11"
 geojson = { version = "0.24.1", features = ["geo-types"] }
+# Pinned to match flatgeobuf's expected geozero version
 geozero = { version = "=0.10.0", default-features = false, features = ["with-geojson"] }
 ordered-float = "3.7.0"
 rand = "0.8.4"
