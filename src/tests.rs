@@ -272,7 +272,7 @@ fn test_min_distance_constraint() {
     // Test that the min_distance_meters parameter is respected
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
     let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
-    
+
     let min_distance = 100.0; // 100 meters
     let options = Options {
         subsample_origin: Subsample::WeightedPoints(subpoints.clone()),
@@ -282,7 +282,7 @@ fn test_min_distance_constraint() {
         min_distance_meters: min_distance,
         deduplicate_pairs: false,
     };
-    
+
     let mut rng = StdRng::seed_from_u64(42);
     let mut output = Vec::new();
     jitter(
@@ -298,11 +298,13 @@ fn test_min_distance_constraint() {
         },
     )
     .unwrap();
-    
+
     // Verify all output pairs satisfy the minimum distance
     use geo::algorithm::haversine_distance::HaversineDistance;
     for feature in &output {
-        if let Some(geojson::Value::LineString(ls)) = feature.geometry.as_ref().map(|geom| &geom.value) {
+        if let Some(geojson::Value::LineString(ls)) =
+            feature.geometry.as_ref().map(|geom| &geom.value)
+        {
             let origin = Point::new(ls[0][0], ls[0][1]);
             let destination = Point::new(ls[1][0], ls[1][1]);
             let distance = origin.haversine_distance(&destination);
@@ -321,7 +323,7 @@ fn test_zero_trip_rows_preserved() {
     // Test that rows with 0 trips in disaggregation_key are still processed
     // This addresses the edge case mentioned in the code
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
-    
+
     let options = Options {
         subsample_origin: Subsample::RandomPoints,
         subsample_destination: Subsample::RandomPoints,
@@ -330,7 +332,7 @@ fn test_zero_trip_rows_preserved() {
         min_distance_meters: 1.0,
         deduplicate_pairs: false,
     };
-    
+
     let mut rng = StdRng::seed_from_u64(42);
     let mut output = Vec::new();
     jitter(
@@ -346,10 +348,13 @@ fn test_zero_trip_rows_preserved() {
         },
     )
     .unwrap();
-    
+
     // The test passes if we got here without panicking
     // Verify we got some output
-    assert!(!output.is_empty(), "Should produce output even with some zero-trip rows");
+    assert!(
+        !output.is_empty(),
+        "Should produce output even with some zero-trip rows"
+    );
 }
 
 #[test]
@@ -357,14 +362,15 @@ fn test_weighted_points_distribution() {
     // Test that weighted points are sampled according to their weights
     // This addresses issue #18 about sanity checking weighted results
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
-    let destination_subpoints = scrape_points("data/schools.geojson", Some("weight".to_string())).unwrap();
-    
+    let destination_subpoints =
+        scrape_points("data/schools.geojson", Some("weight".to_string())).unwrap();
+
     // Create a map of point -> weight
     let mut point_weights: HashMap<Point<NotNan<f64>>, f64> = HashMap::new();
     for wp in &destination_subpoints {
         point_weights.insert(hashify_point(wp.point), wp.weight);
     }
-    
+
     let options = Options {
         subsample_origin: Subsample::RandomPoints,
         subsample_destination: Subsample::WeightedPoints(destination_subpoints),
@@ -373,7 +379,7 @@ fn test_weighted_points_distribution() {
         min_distance_meters: 1.0,
         deduplicate_pairs: false,
     };
-    
+
     let mut rng = StdRng::seed_from_u64(42);
     let mut output = Vec::new();
     jitter(
@@ -389,20 +395,25 @@ fn test_weighted_points_distribution() {
         },
     )
     .unwrap();
-    
+
     // Count how many times each destination appears
     let mut destination_counts: HashMap<Point<NotNan<f64>>, usize> = HashMap::new();
     for feature in &output {
-        if let Some(geojson::Value::LineString(ls)) = feature.geometry.as_ref().map(|geom| &geom.value) {
+        if let Some(geojson::Value::LineString(ls)) =
+            feature.geometry.as_ref().map(|geom| &geom.value)
+        {
             let dest = ls.last().unwrap();
             let dest_point = hashify_point(Point::new(dest[0], dest[1]));
             *destination_counts.entry(dest_point).or_insert(0) += 1;
         }
     }
-    
+
     // We should have at least 2 different destinations used
-    assert!(destination_counts.len() >= 2, "Should use multiple destination points");
-    
+    assert!(
+        destination_counts.len() >= 2,
+        "Should use multiple destination points"
+    );
+
     // The correlation between weight and count should be positive
     // (not testing exact values due to randomness, but checking general trend)
     if destination_counts.len() >= 3 {
@@ -416,7 +427,10 @@ fn test_weighted_points_distribution() {
         }
         // Just verify that some high-weight points got more counts
         // This is a weak test but better than nothing
-        assert!(weights.len() == counts.len(), "Weight and count vectors should match");
+        assert!(
+            weights.len() == counts.len(),
+            "Weight and count vectors should match"
+        );
     }
 }
 
@@ -424,7 +438,7 @@ fn test_weighted_points_distribution() {
 fn test_random_points_subsample() {
     // Test jittering with RandomPoints (no subpoints provided)
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
-    
+
     let options = Options {
         subsample_origin: Subsample::RandomPoints,
         subsample_destination: Subsample::RandomPoints,
@@ -433,7 +447,7 @@ fn test_random_points_subsample() {
         min_distance_meters: 1.0,
         deduplicate_pairs: false,
     };
-    
+
     let mut rng = StdRng::seed_from_u64(42);
     let mut output = Vec::new();
     jitter(
@@ -449,23 +463,31 @@ fn test_random_points_subsample() {
         },
     )
     .unwrap();
-    
-    assert!(!output.is_empty(), "Should produce output with RandomPoints");
-    
+
+    assert!(
+        !output.is_empty(),
+        "Should produce output with RandomPoints"
+    );
+
     // Verify that origins and destinations are within their respective zones
     // (this is a basic sanity check)
     use geo::algorithm::contains::Contains;
     let mut checked_count = 0;
-    for feature in output.iter().take(10) {  // Check first 10 for performance
-        if let Some(geojson::Value::LineString(ls)) = feature.geometry.as_ref().map(|geom| &geom.value) {
+    for feature in output.iter().take(10) {
+        // Check first 10 for performance
+        if let Some(geojson::Value::LineString(ls)) =
+            feature.geometry.as_ref().map(|geom| &geom.value)
+        {
             let origin = Point::new(ls[0][0], ls[0][1]);
             let destination = Point::new(ls[1][0], ls[1][1]);
-            
+
             // Get zone IDs from properties
-            if let (Some(Value::String(origin_id)), Some(Value::String(dest_id))) = 
-                (feature.property("geo_code1"), feature.property("geo_code2")) {
-                if let (Some(origin_zone), Some(dest_zone)) = 
-                    (zones.get(origin_id), zones.get(dest_id)) {
+            if let (Some(Value::String(origin_id)), Some(Value::String(dest_id))) =
+                (feature.property("geo_code1"), feature.property("geo_code2"))
+            {
+                if let (Some(origin_zone), Some(dest_zone)) =
+                    (zones.get(origin_id), zones.get(dest_id))
+                {
                     assert!(
                         origin_zone.contains(&origin),
                         "Origin point should be within origin zone"
@@ -479,7 +501,10 @@ fn test_random_points_subsample() {
             }
         }
     }
-    assert!(checked_count > 0, "Should have verified some point containment");
+    assert!(
+        checked_count > 0,
+        "Should have verified some point containment"
+    );
 }
 
 #[test]
@@ -487,10 +512,10 @@ fn test_different_thresholds_consistency() {
     // Test that different disaggregation thresholds produce consistent total flows
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
     let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
-    
+
     let thresholds = vec![10, 50, 100];
     let mut all_sums = Vec::new();
-    
+
     for threshold in thresholds {
         let options = Options {
             subsample_origin: Subsample::WeightedPoints(subpoints.clone()),
@@ -500,7 +525,7 @@ fn test_different_thresholds_consistency() {
             min_distance_meters: 1.0,
             deduplicate_pairs: false,
         };
-        
+
         let mut rng = StdRng::seed_from_u64(42);
         let mut output = Vec::new();
         jitter(
@@ -516,11 +541,11 @@ fn test_different_thresholds_consistency() {
             },
         )
         .unwrap();
-        
+
         let sum = sum_trips_output(&output, "all");
         all_sums.push(sum);
     }
-    
+
     // All sums should be equal (within epsilon)
     let first_sum = all_sums[0];
     for &sum in all_sums.iter().skip(1) {
@@ -538,7 +563,7 @@ fn test_properties_preserved() {
     // Test that all input properties are preserved in the output
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
     let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
-    
+
     let options = Options {
         subsample_origin: Subsample::WeightedPoints(subpoints.clone()),
         subsample_destination: Subsample::WeightedPoints(subpoints),
@@ -547,7 +572,7 @@ fn test_properties_preserved() {
         min_distance_meters: 1.0,
         deduplicate_pairs: false,
     };
-    
+
     let mut rng = StdRng::seed_from_u64(42);
     let mut output = Vec::new();
     jitter(
@@ -563,13 +588,20 @@ fn test_properties_preserved() {
         },
     )
     .unwrap();
-    
+
     // Check that output features have expected properties
     let expected_properties = vec![
-        "geo_code1", "geo_code2", "all", "train", "bus", 
-        "car_driver", "car_passenger", "bicycle", "foot"
+        "geo_code1",
+        "geo_code2",
+        "all",
+        "train",
+        "bus",
+        "car_driver",
+        "car_passenger",
+        "bicycle",
+        "foot",
     ];
-    
+
     for feature in output.iter().take(5) {
         let props = feature.properties.as_ref().unwrap();
         for prop_name in &expected_properties {
@@ -587,9 +619,9 @@ fn test_deterministic_with_seed() {
     // Test that the same seed produces identical results
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
     let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
-    
+
     let mut outputs = Vec::new();
-    
+
     for _ in 0..2 {
         let options = Options {
             subsample_origin: Subsample::WeightedPoints(subpoints.clone()),
@@ -599,7 +631,7 @@ fn test_deterministic_with_seed() {
             min_distance_meters: 1.0,
             deduplicate_pairs: false,
         };
-        
+
         let mut rng = StdRng::seed_from_u64(12345);
         let mut output = Vec::new();
         jitter(
@@ -615,13 +647,17 @@ fn test_deterministic_with_seed() {
             },
         )
         .unwrap();
-        
+
         outputs.push(output);
     }
-    
+
     // Both runs should produce the same number of features
-    assert_eq!(outputs[0].len(), outputs[1].len(), "Same seed should produce same number of features");
-    
+    assert_eq!(
+        outputs[0].len(),
+        outputs[1].len(),
+        "Same seed should produce same number of features"
+    );
+
     // Check that the first few geometries match
     for i in 0..std::cmp::min(5, outputs[0].len()) {
         let geom1 = &outputs[0][i].geometry;
@@ -646,7 +682,7 @@ fn test_disaggregate_mode_column() {
         min_distance_meters: 1.0,
         deduplicate_pairs: false,
     };
-    
+
     let mut rng = StdRng::seed_from_u64(42);
     let mut output = Vec::new();
     disaggregate("data/od.csv", &zones, &mut rng, options, |feature| {
@@ -654,23 +690,31 @@ fn test_disaggregate_mode_column() {
         Ok(())
     })
     .unwrap();
-    
+
     // Every feature should have a mode property
     let mut modes_found = HashSet::new();
     for feature in &output {
         let props = feature.properties.as_ref().unwrap();
-        assert!(props.contains_key("mode"), "Disaggregated output should have 'mode' property");
+        assert!(
+            props.contains_key("mode"),
+            "Disaggregated output should have 'mode' property"
+        );
         if let Some(Value::String(mode)) = props.get("mode") {
             modes_found.insert(mode.clone());
         }
     }
-    
+
     // Should have multiple modes
-    assert!(modes_found.len() > 1, "Should have disaggregated by multiple modes");
-    
+    assert!(
+        modes_found.len() > 1,
+        "Should have disaggregated by multiple modes"
+    );
+
     // Should include some expected modes
-    assert!(modes_found.contains("car_driver") || modes_found.contains("foot"), 
-            "Should include common travel modes");
+    assert!(
+        modes_found.contains("car_driver") || modes_found.contains("foot"),
+        "Should include common travel modes"
+    );
 }
 
 #[test]
@@ -678,7 +722,7 @@ fn test_large_disaggregation_threshold() {
     // Test with a very large threshold (effectively no disaggregation)
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
     let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
-    
+
     let options = Options {
         subsample_origin: Subsample::WeightedPoints(subpoints.clone()),
         subsample_destination: Subsample::WeightedPoints(subpoints),
@@ -687,7 +731,7 @@ fn test_large_disaggregation_threshold() {
         min_distance_meters: 1.0,
         deduplicate_pairs: false,
     };
-    
+
     let mut rng = StdRng::seed_from_u64(42);
     let mut output = Vec::new();
     jitter(
@@ -703,7 +747,7 @@ fn test_large_disaggregation_threshold() {
         },
     )
     .unwrap();
-    
+
     // Should still work and preserve total trips
     let input_sum = sum_trips_input("data/od.csv", &["all"])["all"];
     let output_sum = sum_trips_output(&output, "all");
@@ -713,15 +757,15 @@ fn test_large_disaggregation_threshold() {
     );
 }
 
-#[test] 
+#[test]
 fn test_mixed_zone_types() {
     // Test that zones can handle both Polygon and MultiPolygon geometries
     // This relates to issue #30
     let zones = load_zones("data/zones.geojson", "InterZone").unwrap();
-    
+
     // Verify we loaded some zones
     assert!(!zones.is_empty(), "Should load zones successfully");
-    
+
     // All zones should be MultiPolygons (even if converted from Polygons)
     for (zone_id, multipolygon) in &zones {
         assert!(
@@ -736,10 +780,13 @@ fn test_mixed_zone_types() {
 fn test_subpoints_without_weights() {
     // Test that subpoints work correctly when no weight key is provided
     let subpoints = scrape_points("data/road_network.geojson", None).unwrap();
-    
+
     // When no weight is provided, all weights should be 1.0
     for pt in subpoints.iter().take(10) {
-        assert_eq!(pt.weight, 1.0, "Points without weight key should default to weight 1.0");
+        assert_eq!(
+            pt.weight, 1.0,
+            "Points without weight key should default to weight 1.0"
+        );
     }
 }
 
@@ -755,7 +802,7 @@ fn test_geometry_types() {
         min_distance_meters: 1.0,
         deduplicate_pairs: false,
     };
-    
+
     let mut rng = StdRng::seed_from_u64(42);
     let mut output = Vec::new();
     jitter(
@@ -771,12 +818,22 @@ fn test_geometry_types() {
         },
     )
     .unwrap();
-    
+
     for (i, feature) in output.iter().enumerate() {
-        assert!(feature.geometry.is_some(), "Feature {} should have geometry", i);
-        
-        if let Some(geojson::Value::LineString(ls)) = feature.geometry.as_ref().map(|geom| &geom.value) {
-            assert_eq!(ls.len(), 2, "LineString should have exactly 2 points (origin and destination)");
+        assert!(
+            feature.geometry.is_some(),
+            "Feature {} should have geometry",
+            i
+        );
+
+        if let Some(geojson::Value::LineString(ls)) =
+            feature.geometry.as_ref().map(|geom| &geom.value)
+        {
+            assert_eq!(
+                ls.len(),
+                2,
+                "LineString should have exactly 2 points (origin and destination)"
+            );
             assert_eq!(ls[0].len(), 2, "Points should be 2D");
             assert_eq!(ls[1].len(), 2, "Points should be 2D");
         } else {
