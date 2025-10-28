@@ -199,11 +199,11 @@ pub fn jitter<P: AsRef<Path>, F: FnMut(Feature) -> Result<()>>(
         } else {
             bail!("Unknown destination zone {destination_id}");
         };
-        let origin_sampler = Subsampler::new(&points_per_origin_zone, origin_zone, &origin_id)?;
+        let origin_sampler = Subsampler::new(&points_per_origin_zone, origin_zone, origin_id)?;
         let destination_sampler = Subsampler::new(
             &points_per_destination_zone,
             destination_zone,
-            &destination_id,
+            destination_id,
         )?;
 
         if options.deduplicate_pairs {
